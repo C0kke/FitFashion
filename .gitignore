@@ -1,0 +1,4 @@
+/node_modules
+/ms-auth-venv
+.env
+.env.*

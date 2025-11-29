@@ -1,0 +1,22 @@
+FROM python:3.11-alpine AS builder
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+RUN apk update && apk add --no-cache gcc musl-dev postgresql-dev
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+FROM python:3.11-alpine
+
+RUN apk update && apk add --no-cache postgresql-client 
+WORKDIR /app
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY . /app
+EXPOSE 8001
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn ms_auth.wsgi:application --bind 0.0.0.0:8001 --workers 4"]
