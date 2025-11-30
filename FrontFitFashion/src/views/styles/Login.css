@@ -1,0 +1,33 @@
+.login-container {
+    display: flex;
+    flex-direction: column;
+    width: 60vw;
+    margin: 10em auto;
+    justify-content: center;
+    text-align: center;
+}
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    button {
+        margin: 0 auto;
+        width: 50%;
+    }
+}
+
+.inputSection {
+    display: flex;
+    flex-direction: column;
+    padding: 2em;
+    width: 60%;
+    gap: 10px;
+
+    label {
+        text-align: left;
+    }
+}
