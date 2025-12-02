@@ -2,10 +2,9 @@ package main
 
 import (
 	"log"
-
 	"github.com/gin-gonic/gin"
-	
-	"github.com/Cokke/FitFashion/tree/main/ms_cart/pkg/database" 
+	"github.com/C0kke/FitFashion/ms_cart/pkg/database" 
+	"fmt"
 )
 
 func main() {

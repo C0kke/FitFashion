@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	
-	"github.com/Cokke/FitFashion/tree/main/ms_cart/internal/models" 
+	"github.com/C0kke/FitFashion/ms_cart/internal/models" 
 )
 
 var DB *gorm.DB 

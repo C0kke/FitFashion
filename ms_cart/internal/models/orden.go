@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// postgreSQL
 type Orden struct {
     gorm.Model 
 	
