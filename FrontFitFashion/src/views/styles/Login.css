@@ -1,33 +1,99 @@
 .login-container {
     display: flex;
     flex-direction: column;
-    width: 60vw;
-    margin: 10em auto;
+    width: 100%;
+    min-height: 100vh;
     justify-content: center;
-    text-align: center;
+    align-items: center;
+    background-color: var(--bg-light);
 }
 
 .formSection {
+    background-color: var(--bg-white);
+    padding: 3em;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(93, 64, 55, 0.1);
+    width: 90%;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
     text-align: center;
+}
 
-    button {
-        margin: 0 auto;
-        width: 50%;
-    }
+.formSection h1 {
+    color: var(--color-primary);
+    margin-bottom: 1.5em;
+    font-size: 2em;
 }
 
 .inputSection {
     display: flex;
     flex-direction: column;
-    padding: 2em;
-    width: 60%;
-    gap: 10px;
+    width: 100%;
+    gap: 1.2em;
+}
 
-    label {
-        text-align: left;
-    }
+.inputSection label {
+    text-align: left;
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.inputSection input {
+    padding: 0.8em;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+    background-color: #fafafa;
+}
+
+.inputSection input:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+    background-color: #fff;
+}
+
+.formSection button {
+    margin-top: 2em;
+    width: 100%;
+    padding: 1em;
+    background-color: var(--color-secondary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.formSection button:hover {
+    background-color: #4a148c;
+    transform: translateY(-2px);
+}
+
+.toggleSection {
+    margin-top: 1.5em;
+    color: var(--text-color);
+}
+
+.toggleLink {
+    color: var(--color-accent);
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.toggleLink:hover {
+    color: var(--color-secondary);
+}
+
+.errorText {
+    color: #d32f2f;
+    font-size: 0.8em;
+    margin-top: -0.5em;
+    text-align: left;
 }

@@ -7,9 +7,20 @@
   margin: 0;
   padding: 0;
 
-  background-color: #fff;
+  /* Palette: Orange - Brown - Purple */
+  --color-primary: #5D4037; /* Brown */
+  --color-secondary: #7B1FA2; /* Purple */
+  --color-accent: #FF6F00; /* Orange */
+  --bg-light: #FFF8E1; /* Light Cream/Orange */
+  --bg-white: #FFFFFF;
+  --text-color: #3E2723;
+  
+  background-color: var(--bg-light);
+  color: var(--text-color);
+}
 
-  --color-primary: #491814;
-  --color-secondary: #7a00aa;
-  --bg-primary: #ff6600;
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-light);
 }
