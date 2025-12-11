@@ -11,6 +11,6 @@ type Orden struct {
 	UsuarioID   uint      `gorm:"not null;index"` 
 	Total       float64   `gorm:"type:numeric"`
 	Estado      string    `gorm:"default:'PENDIENTE'"`
-	
+	DireccionEnvio string   `gorm:"not null"`
 	ItemsOrden  []ItemOrden `gorm:"foreignKey:OrdenID"` 
 }
