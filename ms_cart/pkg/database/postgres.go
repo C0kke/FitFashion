@@ -8,7 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	
-	"github.com/Cokke/FitFashion/ms_cart/internal/models" 
+	"github.com/C0kke/FitFashion/ms_cart/internal/models" 
 )
 
 var DB *gorm.DB 
@@ -22,7 +22,7 @@ func ConectarPostgres() {
         os.Getenv("DB_NAME"),
         os.Getenv("DB_PORT"),
         os.Getenv("DB_SSLMODE"),
-        os.Getenv("DB_TIMEZONE")
+        os.Getenv("DB_TIMEZONE"),
     )
     
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -32,7 +32,7 @@ func ConectarPostgres() {
 
 	fmt.Println("Conexión exitosa a PostgreSQL")
 
-	err = db.AutoMigrate(&models.Orden{}, &models.ItemOrden{})
+	err = db.AutoMigrate(&models.Order{}, &models.OrderItem{})
 	if err != nil {
 		log.Fatalf("Fallo la migración de la DB: %v", err)
 	}
