@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"time"
+    "log"
 	
 	"github.com/go-redis/redis/v8"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database"
+    "github.com/C0kke/FitFashion/ms_cart/internal/messaging"
 )
 
 const CheckoutTTL = 10 * time.Minute 
@@ -20,15 +22,18 @@ type OrderService struct {
     
     UserClient    UserClient 
     ProductClient ProductClient 
+
+    OrderPublisher *messaging.OrderPublisher
 }
 
-func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, userClient UserClient, productClient ProductClient) *OrderService {
+func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, userClient UserClient, productClient ProductClient, orderPublisher *messaging.OrderPublisher) *OrderService {
 	return &OrderService{
 		OrderRepo:   orderRepo,
 		CartRepo:    cartRepo,
 		RedisClient: database.RedisClient,
         UserClient:  userClient,
         ProductClient: productClient,
+        OrderPublisher: orderPublisher,
 	}
 }
 
@@ -66,6 +71,13 @@ func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*mode
         return nil, fmt.Errorf("fallo al guardar la orden en PostgreSQL: %w", err)
     }
 
+    go func() {
+        ctxPub := context.Background()
+        if pubErr := s.OrderPublisher.PublishOrderCreated(ctxPub, newOrder); pubErr != nil {
+            log.Printf("Error ASÍNCRONO al publicar evento de orden: %v", pubErr)
+        }
+    }()
+
     err = s.CartRepo.DeleteByUserID(ctx, userID)
     if err != nil {
         fmt.Printf("Advertencia: Fallo al eliminar el carrito de Redis: %v\n", err)
@@ -74,8 +86,8 @@ func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*mode
 	return newOrder, nil
 }
 
-func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Cart) ([]models.ItemOrder, float64, error) {
-    items := make([]models.ItemOrder, 0, len(cart.Items))
+func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Cart) ([]models.OrderItem, float64, error) {
+    items := make([]models.OrderItem, 0, len(cart.Items))
     var total float64
     
     for _, cartItem := range cart.Items {
@@ -84,9 +96,9 @@ func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Car
             return nil, 0, fmt.Errorf("producto %s no encontrado o stock agotado: %w", cartItem.ProductID, err)
         }
 
-        items = append(items, models.ItemOrder{
+        items = append(items, models.OrderItem{
             ProductID: cartItem.ProductID,
-            Quantity:   uint(cartItem.Quantity),
+            Quantity:   cartItem.Quantity,
             UnitPrice: productDetails.Price,
             NameSnapshot: productDetails.Name,
         })
@@ -95,4 +107,8 @@ func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Car
     }
     
     return items, total, nil
+}
+
+func (s *OrderService) GetUserOrders(ctx context.Context, userID uint) ([]models.Order, error) {
+    return s.OrderRepo.FindByUserID(ctx, userID)
 }

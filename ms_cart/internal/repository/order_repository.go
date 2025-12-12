@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm" 
 	
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
+	"github.com/C0kke/FitFashion/ms_cart/pkg/database" 
 )
 
 type OrderRepository interface {
@@ -20,7 +21,7 @@ type PostgresOrderRepository struct {
 	DB *gorm.DB 
 }
 
-func NewPostgresOrderRepository(db *gorm.DB) OrderRepository {
+func NewPostgresOrderRepository() OrderRepository {
 	return &PostgresOrderRepository{
 		DB: database.DB, 
 	}

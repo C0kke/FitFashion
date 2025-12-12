@@ -7,7 +7,7 @@ import (
 
 type RouterConfig struct {
 	CartHandler *handlers.CartHandler
-	// OrderHandler *handlers.OrderHandler
+	OrderHandler *handlers.OrderHandler
 }
 
 func SetupRouter(config RouterConfig) *gin.Engine {
@@ -21,11 +21,18 @@ func SetupRouter(config RouterConfig) *gin.Engine {
 
 	api := router.Group("/api/v1")
 	{
-		carrito := api.Group("/carrito")
+		cart := api.Group("/cart")
 		{
-			carrito.POST("/agregar", config.CartHandler.AddItemToCart)
-			carrito.GET("/", config.CartHandler.GetCart) 
-			// implementar delete
+			cart.POST("/update-quantity", config.CartHandler.AdjustItemQuantity)
+			cart.GET("/", config.CartHandler.GetCart) 
+			cart.DELETE("/:product_id", config.CartHandler.RemoveItemFromCart)
+			cart.DELETE("/", config.CartHandler.ClearCart)
+		}
+
+		orders := api.Group("/orders")
+		{
+			orders.POST("/checkout", config.OrderHandler.Checkout)
+			orders.GET("/", config.OrderHandler.GetUserOrders) 
 		}
 	}
 
