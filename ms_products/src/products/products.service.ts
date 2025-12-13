@@ -89,4 +89,75 @@ export class ProductsService {
     
   }
 
+  async validateStock(items: { productId: string; quantity: number }[]) {
+
+    const productIds = items.map((item) => item.productId);
+    const products = await this.productRepo.findBy({id: In(productIds),});
+
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId);
+
+      if (!product) {
+        return { valid: false, message: `Producto ${item.productId} no encontrado` };
+      }
+
+      if (product.stock < item.quantity) {
+        return { valid: false, message: `Stock insuficiente para ${product.name}. Solicitado: ${item.quantity}, Disponible: ${product.stock}` };
+      }
+    }
+
+    return { valid: true, message: 'Stock disponible' };
+  }
+
+  async calculateCartDetails(items: { productId: string; quantity: number }[]) {
+    const productIds = items.map((item) => item.productId);
+
+    if (productIds.length === 0) return { totalPrice: 0, items: [] };
+
+    const products = await this.productRepo.findBy({ id: In(productIds) });
+    let total = 0;
+    const details: { productId: string; nameSnapshot: string; unitPrice: number; quantity: number; subtotal: number }[] = [];
+
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId);
+      
+      if (!product) continue; 
+      
+      const subtotal = product.price * item.quantity;
+      total += subtotal;
+
+      details.push({
+        productId: product.id,
+        nameSnapshot: product.name,
+        unitPrice: product.price,
+        quantity: item.quantity,
+        subtotal: subtotal
+      });
+    }
+
+    return {totalPrice: total,items: details};
+  }
+
+  async decreaseStockBatch(items: { productId: string; quantity: number }[]) {
+    const productIds = items.map((item) => item.productId);
+    const products = await this.productRepo.findBy({ id: In(productIds) });
+
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId);
+      if (!product) throw new NotFoundException(`Producto ${item.productId} no encontrado`);
+      if (product.stock < item.quantity) throw new BadRequestException(`Stock insuficiente para el producto ${item.productId}`);
+    }
+
+    const savePromises = items.map(async (item) => {
+      const product = products.find((p) => p.id === item.productId);
+      if (!product) return; 
+
+      product.stock -= item.quantity;
+      return this.productRepo.save(product);
+    });
+
+    await Promise.all(savePromises);
+    return { success: true, message: 'Stock actualizado correctamente' };
+  }
+
 }
