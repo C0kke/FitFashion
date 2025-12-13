@@ -76,3 +76,32 @@ func (h *OrderHandler) GetUserOrders(c *gin.Context) {
     
     c.JSON(http.StatusOK, orders)
 }
+
+func (h *OrderHandler) HandlePaymentWebhook(c *gin.Context) {
+	var notification models.WebhookNotification
+	
+	if err := c.ShouldBindJSON(&notification); err != nil {
+		log.Printf("Error al parsear webhook de MP: %v", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	if notification.Type != "payment" {
+		c.Status(http.StatusOK) 
+		return
+	}
+    
+    paymentID := notification.Data.ID 
+	
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+    err := h.OrderService.VerifyAndFinalizePayment(ctx, paymentID)
+	if err != nil {
+        log.Printf("Fallo al finalizar pago #%s: %v", paymentID, err)
+		c.Status(http.StatusInternalServerError) 
+		return
+	}
+
+	c.Status(http.StatusOK) 
+}

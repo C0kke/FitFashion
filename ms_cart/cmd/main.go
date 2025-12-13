@@ -30,8 +30,23 @@ func main() {
 	database.ConectarRedis()
 	mqconn.ConectarRabbitMQ()
 
+	mpAccessToken := os.Getenv("MP_ACCESS_TOKEN")
+    if mpAccessToken == "" {
+        log.Fatal("MP_ACCESS_TOKEN no encontrado en .env")
+    }
+
 	userClient := &service.MockUserClient{}
 	productClient := &service.MockProductClient{}
+
+	mpAccessToken := os.Getenv("MP_ACCESS_TOKEN")
+    if mpAccessToken == "" {
+        log.Fatal("MP_ACCESS_TOKEN no encontrado en .env")
+    }
+
+    paymentClient, err := service.NewMercadoPagoClient(mpAccessToken)
+    if err != nil {
+        log.Fatalf("Error al inicializar Mercado Pago Client: %v", err)
+    }
 
 	cartRepo := repository.NewRedisCartRepository()
 	orderRepo := repository.NewPostgresOrderRepository()
@@ -39,7 +54,7 @@ func main() {
     orderPublisher := messaging.NewOrderPublisher() 
 
 	cartService := service.NewCartService(cartRepo)
-	orderService := service.NewOrderService(orderRepo, cartRepo, userClient, productClient, orderPublisher)
+	orderService := service.NewOrderService(orderRepo, cartRepo, userClient, productClient, orderPublisher, paymentClient)
 
 	cartHandler := handlers.NewCartHandler(cartService)
 	orderHandler := handlers.NewOrderHandler(orderService)

@@ -13,28 +13,33 @@ type RouterConfig struct {
 func SetupRouter(config RouterConfig) *gin.Engine {
 	router := gin.Default()
 
-	// simulación autenticación
-	router.Use(func(c *gin.Context) {
-		c.Set(handlers.ContextUserIDKey, "100") 
-		c.Next()
-	})
+	public := router.Group("/api/v1")
 
-	api := router.Group("/api/v1")
 	{
-		cart := api.Group("/cart")
-		{
-			cart.POST("/update-quantity", config.CartHandler.AdjustItemQuantity)
-			cart.GET("/", config.CartHandler.GetCart) 
-			cart.DELETE("/:product_id", config.CartHandler.RemoveItemFromCart)
-			cart.DELETE("/", config.CartHandler.ClearCart)
-		}
+        public.POST("/payments/webhook", config.OrderHandler.HandlePaymentWebhook) 
+    }
+	
+	private := router.Group("/api/v1")
+	private.Use(func(c *gin.Context) {
+        c.Set(handlers.ContextUserIDKey, "100") 
+        c.Next()
+    })
 
-		orders := api.Group("/orders")
-		{
-			orders.POST("/checkout", config.OrderHandler.Checkout)
-			orders.GET("/", config.OrderHandler.GetUserOrders) 
-		}
-	}
+	{
+        cart := private.Group("/cart")
+        {
+            cart.POST("/update-quantity", config.CartHandler.AdjustItemQuantity)
+            cart.GET("/", config.CartHandler.GetCart) 
+            cart.DELETE("/:product_id", config.CartHandler.RemoveItemFromCart)
+            cart.DELETE("/", config.CartHandler.ClearCart)
+        }
+
+        orders := private.Group("/orders")
+        {
+            orders.POST("/checkout", config.OrderHandler.Checkout)
+            orders.GET("/", config.OrderHandler.GetUserOrders) 
+        }
+    }
 
 	return router
 }

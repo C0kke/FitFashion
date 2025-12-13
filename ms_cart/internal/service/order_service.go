@@ -24,9 +24,10 @@ type OrderService struct {
     ProductClient ProductClient 
 
     OrderPublisher *messaging.OrderPublisher
+    PaymentClient PaymentClient
 }
 
-func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, userClient UserClient, productClient ProductClient, orderPublisher *messaging.OrderPublisher) *OrderService {
+func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, userClient UserClient, productClient ProductClient, orderPublisher *messaging.OrderPublisher, paymentClient PaymentClient) *OrderService {
 	return &OrderService{
 		OrderRepo:   orderRepo,
 		CartRepo:    cartRepo,
@@ -34,6 +35,7 @@ func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.C
         UserClient:  userClient,
         ProductClient: productClient,
         OrderPublisher: orderPublisher,
+        PaymentClient: paymentClient,
 	}
 }
 
@@ -53,22 +55,20 @@ func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*mode
 
     orderItems, total, err := s.getSnapshotAndTotal(ctx, cart)
     if err != nil { return nil, fmt.Errorf("fallo al obtener snapshot de productos: %w", err) }
-
-    if total > 5000 { 
-        return nil, fmt.Errorf("pago rechazado por la pasarela de pagos (simulación)")
-    }
     
     newOrder := &models.Order{
         UserID: user.ID,
         Total: total,
-        Status: "PAGADO", 
+        Status: "PENDIENTE", 
         ShippingAddress: user.ShippingAddress, 
         OrderItems: orderItems,
     }
 
-    err = s.OrderRepo.Create(ctx, newOrder)
+    s.OrderRepo.Create(ctx, newOrder) 
+
+    paymentURL, err := s.PaymentClient.StartTransaction(ctx, newOrder.ID, newOrder.Total, orderItems)
     if err != nil {
-        return nil, fmt.Errorf("fallo al guardar la orden en PostgreSQL: %w", err)
+        return nil, fmt.Errorf("fallo al generar URL de pago en Mercado Pago: %w", err)
     }
 
     go func() {
@@ -78,12 +78,11 @@ func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*mode
         }
     }()
 
-    err = s.CartRepo.DeleteByUserID(ctx, userID)
-    if err != nil {
-        fmt.Printf("Advertencia: Fallo al eliminar el carrito de Redis: %v\n", err)
-    }
-
-	return newOrder, nil
+	return &models.CheckoutResponse{
+        OrderID: newOrder.ID,
+        Status: newOrder.Estado,
+        PaymentURL: paymentURL,
+    }, nil
 }
 
 func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Cart) ([]models.OrderItem, float64, error) {
@@ -111,4 +110,42 @@ func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Car
 
 func (s *OrderService) GetUserOrders(ctx context.Context, userID uint) ([]models.Order, error) {
     return s.OrderRepo.FindByUserID(ctx, userID)
+}
+
+func (s *OrderService) VerifyAndFinalizePayment(ctx context.Context, paymentID string) error {
+	
+    paymentDetails, err := s.PaymentClient.GetPaymentStatus(ctx, paymentID)
+    if err != nil {
+        return fmt.Errorf("fallo al obtener detalles de pago #%s desde MP: %w", paymentID, err)
+    }
+
+	externalRef := paymentDetails.ExternalReference 
+    orderID, err := strconv.ParseUint(externalRef, 10, 64)
+    if err != nil {
+        return fmt.Errorf("referencia externa inválida: %s", externalRef)
+    }
+
+	if paymentDetails.Status == "approved" {
+        if err := s.OrderRepo.UpdateStatus(ctx, uint(orderID), "PAGADO"); err != nil {
+            return fmt.Errorf("fallo al actualizar DB a PAGADO: %w", err)
+        }
+        
+        order, err := s.OrderRepo.FindByID(ctx, uint(orderID))
+        if err != nil {
+            log.Printf("Advertencia: Orden #%d pagada pero no encontrada para limpieza: %v", orderID, err)
+        }
+        
+        if err := s.CartRepo.DeleteByUserID(ctx, order.UserID); err != nil {
+            log.Printf("Advertencia: Fallo al eliminar el carrito de Redis después de pago: %v\n", err)
+        }
+        
+        if pubErr := s.OrderPublisher.PublishOrderCreated(ctx, order); pubErr != nil {
+            log.Printf("Error al publicar evento de orden PAGADA: %v", pubErr)
+        }
+        
+    } else if paymentDetails.Status == "rejected" {
+        s.OrderRepo.UpdateStatus(ctx, uint(orderID), "RECHAZADO")
+    }
+
+	return nil
 }
