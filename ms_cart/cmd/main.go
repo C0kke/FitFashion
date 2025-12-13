@@ -26,14 +26,16 @@ func main() {
 		port = "8080"
 	}
 
+	if os.Getenv("FRONTEND_URL") == "" {
+    log.Fatal("FRONTEND_URL no encontrado en .env")
+	}
+	if os.Getenv("WEBHOOK_BASE_URL") == "" {
+		log.Fatal("WEBHOOK_BASE_URL no encontrado en .env")
+	}
+
 	database.ConectarPostgres()
 	database.ConectarRedis()
 	mqconn.ConectarRabbitMQ()
-
-	mpAccessToken := os.Getenv("MP_ACCESS_TOKEN")
-    if mpAccessToken == "" {
-        log.Fatal("MP_ACCESS_TOKEN no encontrado en .env")
-    }
 
 	userClient := &service.MockUserClient{}
 	productClient := &service.MockProductClient{}

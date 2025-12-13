@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
     "log"
+    "strconv"
 	
 	"github.com/go-redis/redis/v8"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
@@ -39,7 +40,7 @@ func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.C
 	}
 }
 
-func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*models.Order, error) {
+func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*models.CheckoutResponse, error) {
 	//cambiar lógica al comunicarme con el otro ms
     cart, err := s.CartRepo.FindByUserID(ctx, userID)
 	if err != nil { return nil, fmt.Errorf("fallo al buscar carrito: %w", err) }
@@ -80,14 +81,14 @@ func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*mode
 
 	return &models.CheckoutResponse{
         OrderID: newOrder.ID,
-        Status: newOrder.Estado,
+        Status: newOrder.Status,
         PaymentURL: paymentURL,
     }, nil
 }
 
-func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Cart) ([]models.OrderItem, float64, error) {
+func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Cart) ([]models.OrderItem, int64, error) {
     items := make([]models.OrderItem, 0, len(cart.Items))
-    var total float64
+    var total int64
     
     for _, cartItem := range cart.Items {
         productDetails, err := s.ProductClient.GetProductDetails(ctx, cartItem.ProductID)
@@ -102,7 +103,7 @@ func (s *OrderService) getSnapshotAndTotal(ctx context.Context, cart *models.Car
             NameSnapshot: productDetails.Name,
         })
         
-        total += productDetails.Price * float64(cartItem.Quantity)
+        total += productDetails.Price
     }
     
     return items, total, nil
@@ -125,17 +126,19 @@ func (s *OrderService) VerifyAndFinalizePayment(ctx context.Context, paymentID s
         return fmt.Errorf("referencia externa inválida: %s", externalRef)
     }
 
+    internalOrderID := uint(orderID)
+
 	if paymentDetails.Status == "approved" {
-        if err := s.OrderRepo.UpdateStatus(ctx, uint(orderID), "PAGADO"); err != nil {
+        if err := s.OrderRepo.UpdateStatus(ctx, internalOrderID, "PAGADO"); err != nil {
             return fmt.Errorf("fallo al actualizar DB a PAGADO: %w", err)
         }
         
-        order, err := s.OrderRepo.FindByID(ctx, uint(orderID))
+        order, err := s.OrderRepo.FindByID(ctx, internalOrderID)
         if err != nil {
             log.Printf("Advertencia: Orden #%d pagada pero no encontrada para limpieza: %v", orderID, err)
         }
         
-        if err := s.CartRepo.DeleteByUserID(ctx, order.UserID); err != nil {
+        if err := s.CartRepo.DeleteByUserID(ctx, strconv.FormatUint(uint64(order.UserID), 10)); err != nil {
             log.Printf("Advertencia: Fallo al eliminar el carrito de Redis después de pago: %v\n", err)
         }
         
@@ -144,7 +147,7 @@ func (s *OrderService) VerifyAndFinalizePayment(ctx context.Context, paymentID s
         }
         
     } else if paymentDetails.Status == "rejected" {
-        s.OrderRepo.UpdateStatus(ctx, uint(orderID), "RECHAZADO")
+        s.OrderRepo.UpdateStatus(ctx, internalOrderID, "RECHAZADO")
     }
 
 	return nil

@@ -11,6 +11,6 @@ type PaymentStatusDetails struct {
 }
 
 type PaymentClient interface {
-	StartTransaction(ctx context.Context, orderID uint, total float64, items []models.OrderItem) (string, error)
+	StartTransaction(ctx context.Context, orderID uint, total int64, items []models.OrderItem) (string, error)
 	GetPaymentStatus(ctx context.Context, paymentID string) (*PaymentStatusDetails, error)
 }

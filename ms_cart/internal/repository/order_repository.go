@@ -14,6 +14,7 @@ type OrderRepository interface {
 	Create(ctx context.Context, order *models.Order) error 
 	FindByID(ctx context.Context, orderID uint) (*models.Order, error)
 	FindByUserID(ctx context.Context, userID uint) ([]models.Order, error)
+	UpdateStatus(ctx context.Context, orderID uint, status string) error
 }
 
 
@@ -58,4 +59,18 @@ func (r *PostgresOrderRepository) FindByUserID(ctx context.Context, userID uint)
 		return nil, result.Error
 	}
 	return orders, nil
+}
+
+func (r *PostgresOrderRepository) UpdateStatus(ctx context.Context, orderID uint, status string) error {
+	result := r.DB.WithContext(ctx).Model(&models.Order{}).Where("id = ?", orderID).Update("status", status)
+	
+	if result.Error != nil {
+		return fmt.Errorf("error al actualizar el estado de la orden: %w", result.Error)
+	}
+	
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("orden no encontrada con ID: %d", orderID)
+	}
+	
+	return nil
 }

@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
+	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 )
 
 type OrderHandler struct {
@@ -45,10 +47,10 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Orden creada y pagada exitosamente",
-		"order_id": order.ID,
-		"total": order.Total,
+		"message": "Orden creada exitosamente",
+		"order_id": order.OrderID,
 		"status": order.Status,
+		"payment_url": order.PaymentURL,
 	})
 }
 

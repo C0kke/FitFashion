@@ -11,6 +11,6 @@ type OrderItem struct {
 	OrderID        uint    `gorm:"index"`
 	ProductID     string  `gorm:"not null"`
 	NameSnapshot string  `gorm:"not null"` 
-	UnitPrice float64 `gorm:"type:numeric"`
+	UnitPrice int64 `gorm:"type:numeric"`
 	Quantity       int     `gorm:"not null"`
 }

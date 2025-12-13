@@ -3,78 +3,160 @@ package service
 import (
     "context"
     "fmt"
-	"time"
-    "github.com/mercadopago/mercadopago-sdk-go/pkg/config"
-    "github.com/mercadopago/mercadopago-sdk-go/pkg/mercadopago" 
-	"github.com/mercadopago/mercadopago-sdk-go/pkg/preference"
-	"github.com/mercadopago/mercadopago-sdk-go/pkg/payment"
+    "os"
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "io"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 )
 
 type MercadoPagoClient struct {
-    client *mercadopago.Client
+    accessToken string
+    baseURL     string
 }
 
 func NewMercadoPagoClient(accessToken string) (PaymentClient, error) {
-    cfg, err := config.New(accessToken)
-    if err != nil {
-        return nil, fmt.Errorf("fallo al configurar el cliente de Mercado Pago: %w", err)
-    }
-
-    client, err := mercadopago.NewClient(cfg)
-    if err != nil {
-        return nil, fmt.Errorf("fallo al crear el cliente de Mercado Pago: %w", err)
+    if accessToken == "" {
+        return nil, fmt.Errorf("access token no puede estar vacío")
     }
 
     return &MercadoPagoClient{
-        client: client,
+        accessToken: accessToken,
+        baseURL:     "https://api.mercadopago.com",
     }, nil
 }
 
-func (m *MercadoPagoClient) StartTransaction(ctx context.Context, orderID uint, total float64, items []models.OrderItem) (string, error) {
-    client := preference.NewClient(m.client) 
-    
-	mpItems := make([]preference.ItemRequest, 0, len(items))
+// Estructuras para las peticiones a la API de Mercado Pago
+type MPItem struct {
+    Title      string  `json:"title"`
+    Quantity   int     `json:"quantity"`
+    UnitPrice  int64 `json:"unit_price"`
+}
+
+type MPBackURLs struct {
+    Success string `json:"success"`
+    Failure string `json:"failure"`
+}
+
+type MPPreferenceRequest struct {
+    Items             []MPItem    `json:"items"`
+    ExternalReference string      `json:"external_reference"`
+    BackURLs          *MPBackURLs `json:"back_urls,omitempty"`
+    NotificationURL   string      `json:"notification_url,omitempty"`
+    AutoReturn        string      `json:"auto_return,omitempty"`
+}
+
+type MPPreferenceResponse struct {
+    ID         string `json:"id"`
+    InitPoint  string `json:"init_point"`
+}
+
+type MPPaymentResponse struct {
+    Status            string `json:"status"`
+    ExternalReference string `json:"external_reference"`
+}
+
+func (m *MercadoPagoClient) StartTransaction(ctx context.Context, orderID uint, total int64, items []models.OrderItem) (string, error) {
+
+	mpItems := make([]MPItem, 0, len(items))
     for _, item := range items {
-        mpItems = append(mpItems, preference.ItemRequest{
-            Title: item.NombreSnapshot,
-            Quantity: int32(item.Cantidad),
-            UnitPrice: item.PrecioUnitario,
+
+        mpItems = append(mpItems, MPItem{
+            Title:     item.NameSnapshot,
+            Quantity:  item.Quantity,
+            UnitPrice: int64(item.UnitPrice * 100),
         })
     }
 
-    request := preference.Request{
-        Items: mpItems,
-        ExternalReference: fmt.Sprintf("%d", orderID), 
-        BackUrls: preference.BackUrls{
-            Success: "http://tu-dominio.com/checkout/success", 
-            Failure: "http://tu-dominio.com/checkout/failure",
-        },
-        NotificationURL: "http://tu-dominio.com/api/v1/pagos/webhook", 
+    request := MPPreferenceRequest{
+        Items:             mpItems,
+        ExternalReference: fmt.Sprintf("%d", orderID),
     }
+    
+    if frontendURL := os.Getenv("FRONTEND_URL"); frontendURL != "" {
+        request.BackURLs = &MPBackURLs{
+            Success: frontendURL + "/success",
+            Failure: frontendURL + "/failure",
+        }
+    }
+    
+    if webhookURL := os.Getenv("WEBHOOK_BASE_URL"); webhookURL != "" {
+        request.NotificationURL = webhookURL + "/pagos/webhook"
+    }
+    
+    request.AutoReturn = "approved"
 
-    resource, err := client.Create(ctx, request)
+    jsonData, err := json.Marshal(request)
     if err != nil {
-        return "", fmt.Errorf("error al crear preferencia en MP: %w", err)
+        return "", fmt.Errorf("error al serializar la preferencia: %w", err)
     }
 
-    // 5. Devolver la URL de Pago (init_point)
-    // El 'init_point' es la URL a la que el Front-end debe redirigir al usuario.
-    return resource.InitPoint, nil
+    req, err := http.NewRequestWithContext(ctx, "POST", m.baseURL+"/checkout/preferences", bytes.NewBuffer(jsonData))
+    if err != nil {
+        return "", fmt.Errorf("error al crear la petición HTTP: %w", err)
+    }
+
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", "Bearer "+m.accessToken)
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return "", fmt.Errorf("error al hacer la petición a Mercado Pago: %w", err)
+    }
+    defer resp.Body.Close()
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return "", fmt.Errorf("error al leer la respuesta: %w", err)
+    }
+
+    if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+        return "", fmt.Errorf("error en Mercado Pago (status %d): %s", resp.StatusCode, string(body))
+    }
+
+    var result MPPreferenceResponse
+    if err := json.Unmarshal(body, &result); err != nil {
+        return "", fmt.Errorf("error al deserializar la respuesta: %w", err)
+    }
+
+    return result.InitPoint, nil
 }
 
 func (m *MercadoPagoClient) GetPaymentStatus(ctx context.Context, paymentID string) (*PaymentStatusDetails, error) {
     
-    client := payment.NewClient(m.client)
-    
-    resource, err := client.Get(ctx, paymentID)
+    req, err := http.NewRequestWithContext(ctx, "GET", m.baseURL+"/v1/payments/"+paymentID, nil)
     if err != nil {
-        return nil, fmt.Errorf("error al obtener detalles del pago #%s: %w", paymentID, err)
+        return nil, fmt.Errorf("error al crear la petición HTTP: %w", err)
+    }
+
+    req.Header.Set("Authorization", "Bearer "+m.accessToken)
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return nil, fmt.Errorf("error al hacer la petición a Mercado Pago: %w", err)
+    }
+    defer resp.Body.Close()
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, fmt.Errorf("error al leer la respuesta: %w", err)
+    }
+
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("error en Mercado Pago (status %d): %s", resp.StatusCode, string(body))
+    }
+
+    var payment MPPaymentResponse
+    if err := json.Unmarshal(body, &payment); err != nil {
+        return nil, fmt.Errorf("error al deserializar la respuesta: %w", err)
     }
     
     details := &PaymentStatusDetails{
-        Status: resource.Status, 
-        ExternalReference: resource.ExternalReference,
+        Status:            payment.Status, 
+        ExternalReference: payment.ExternalReference,
     }
 
     return details, nil

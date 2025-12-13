@@ -1,5 +1,3 @@
-// internal/service/user_client.go
-
 package service
 
 import (
