@@ -5,15 +5,18 @@ import './index.css'
 import Home from './views/Home.jsx'
 import Login from './views/Login.jsx'
 import Profile from './views/Profile.jsx'
+import { CartProvider } from './store/CartContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
-      </Routes>
-    </BrowserRouter>
+    <CartProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </BrowserRouter>
+    </CartProvider> 
   </StrictMode>,
 )

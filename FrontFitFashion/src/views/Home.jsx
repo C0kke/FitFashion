@@ -1,4 +1,7 @@
+import React, { useState } from 'react';
 import Navbar from "../components/Navbar";
+import CartSidebar from "../components/CartSidebar";
+import { useCart } from '../store/CartContext';
 import './styles/Home.css';
 
 import camisa1 from '../assets/camisa-1.jpg';
@@ -30,9 +33,19 @@ const productos = [
 ]
 
 const Home = () => {
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const openCart = () => setIsCartOpen(true);
+    const closeCart = () => setIsCartOpen(false);
+    const { addItem } = useCart();
+
+    const handleAddToCart = (producto) => {
+        addItem(producto);
+        openCart();
+    }
+
     return (
         <div className="main-container">
-            <Navbar />
+            <Navbar onOpenCart={openCart} />
             <div className="content">
                 <span>Nuevos productos</span>
                 <div className="productsSection">
@@ -40,10 +53,14 @@ const Home = () => {
                         <div key={producto.id} className="productCard" onClick={() => window.location.href = `/product/${producto.id}`}>
                             <h3 className="productName">{producto.nombre}</h3>
                             <img src={producto.imagen1} alt={producto.nombre} className="productImage" />
+                            <button className="add-to-cart-btn" onClick={() => handleAddToCart(producto)}>
+                                Añadir al carrito
+                            </button>
                         </div>
                     ))}
                 </div>
             </div>
+            <CartSidebar isOpen={isCartOpen} onClose={closeCart} />
         </div>
     );
 };

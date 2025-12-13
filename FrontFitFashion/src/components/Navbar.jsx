@@ -1,12 +1,17 @@
 import UserIcon from "../assets/user.svg";
+import CartIcon from "../assets/cart.svg";
 import "./styles/Navbar.css";
 import axios from 'axios';
+import { useCart } from '../store/CartContext'; 
 
 const BackURL = import.meta.env.VITE_BACK_URL;
 
-const Navbar = () => {
+const Navbar = ({ onOpenCart }) => { 
+    const { totalItems } = useCart(); 
+    
     const user = localStorage.getItem("user");
     console.log("Navbar user:", user);
+    
     const navigateToSimulate = () => {
         window.location.href = "#";
     };
@@ -45,6 +50,12 @@ const Navbar = () => {
             <h1 onClick={navigateToHome}>FitFashion</h1>
             <div className="rightSection">
                 <button onClick={navigateToSimulate}>Simular outfit</button>
+
+                <button onClick={onOpenCart} className="cart-button">
+                    <img src={CartIcon} alt="Cart Icon" className="cartIcon" />
+                    {totalItems > 0 && <span className="cart-count">{totalItems}</span>}
+                </button>
+
                 <button onClick={navigateToProfile}>
                     <img src={UserIcon} alt="User Icon" className="userIcon" />
                 </button>
