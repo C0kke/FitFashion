@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  ms-products:
+    build: . 
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - DB_HOST=host.docker.internal
+    depends_on:
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # Puerto para mensajes
+      - "15672:15672" # Puerto para (http://localhost:15672)
+    container_name: rabbitmq-local

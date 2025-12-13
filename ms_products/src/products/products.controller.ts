@@ -5,6 +5,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ParseArrayPipe } from '@nestjs/common';
 import { CartItemDto } from './dto/cart-item.dto';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('products')
 export class ProductsController {
@@ -68,5 +69,34 @@ export class ProductsController {
   @Post('confirm-purchase')
   async confirmPurchase(@Body(new ParseArrayPipe({ items: CartItemDto })) items: CartItemDto[]) {
     return this.productsService.decreaseStockBatch(items);
+  }
+
+  // ======================================================
+  //  ESCUCHA DE RABBITMQ (Para el MS_CART en Go)
+  // ======================================================
+
+  // 1. Escuchar solicitud de validación de stock
+  // Pattern: "validate_stock"
+  @MessagePattern('validate_stock')
+  async handleValidateStock(@Payload() data: any) {
+    // data llega como el array de productos
+    console.log('RabbitMQ: Validando stock', data);
+    return this.productsService.validateStock(data);
+  }
+
+  // 2. Escuchar solicitud de cálculo de carrito
+  // Pattern: "calculate_cart"
+  @MessagePattern('calculate_cart')
+  async handleCalculateCart(@Payload() data: any) {
+    console.log('RabbitMQ: Calculando carrito', data);
+    return this.productsService.calculateCartDetails(data);
+  }
+
+  // 3. Escuchar confirmación de compra (Restar Stock)
+  // Pattern: "decrease_stock"
+  @MessagePattern('decrease_stock')
+  async handleDecreaseStock(@Payload() data: any) {
+    console.log('RabbitMQ: Compra confirmada, restando stock', data);
+    return this.productsService.decreaseStockBatch(data);
   }
 }
