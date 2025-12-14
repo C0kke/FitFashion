@@ -53,7 +53,7 @@ const Home = () => {
                         <div key={producto.id} className="productCard" onClick={() => window.location.href = `/product/${producto.id}`}>
                             <h3 className="productName">{producto.nombre}</h3>
                             <img src={producto.imagen1} alt={producto.nombre} className="productImage" />
-                            <button className="add-to-cart-btn" onClick={() => handleAddToCart(producto)}>
+                            <button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); handleAddToCart(producto) }}>
                                 Añadir al carrito
                             </button>
                         </div>
