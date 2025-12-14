@@ -4,7 +4,7 @@ import "./styles/Navbar.css";
 import axios from 'axios';
 import { useCart } from '../store/CartContext'; 
 
-const BackURL = import.meta.env.VITE_BACK_URL;
+const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 const Navbar = ({ onOpenCart }) => { 
     const { totalItems } = useCart(); 

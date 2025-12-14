@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import axios from "axios";
 
-const BackURL = import.meta.env.VITE_BACK_URL;
+const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 const Profile = () => {
     const [user, setUser] = useState(null);

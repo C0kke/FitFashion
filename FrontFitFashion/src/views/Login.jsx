@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import './styles/Login.css';
 import axios from 'axios';
 
-const BackURL = import.meta.env.VITE_BACK_URL;
+const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 const Login = () => {
     const [isRegister, setIsRegister] = useState(false);
@@ -23,6 +23,23 @@ const Login = () => {
         }
     }, [checkpassword]);
 
+     useEffect(() => {
+        const handleKeyPress = (event) => {
+            if (event.key === 'Enter') {
+                if (isRegister) {
+                    handleRegister();
+                } else {
+                    hanldeLogin();
+                }
+            }
+        }
+        window.addEventListener('keydown', handleKeyPress);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyPress);
+        }
+    }, [isRegister, username, password, name, email, checkpassword]);
+
     const hanldeLogin = async () => {
         setIsLoading(true);
         try {
@@ -30,7 +47,6 @@ const Login = () => {
                 username,
                 password
             });
-            console.log(res.data);
             if (res.data.auth_token) {
                 localStorage.setItem("user", res.data.auth_token);
                 window.location.href = "/";
@@ -51,7 +67,14 @@ const Login = () => {
                 email,
                 password,
             });
-            console.log(res.data);
+            if (res.data.status === 201) {
+                setName("");
+                setUsername("");
+                setEmail("");
+                setPassword("");
+                setCheckPassword("");
+                setIsRegister(false);
+            }
         } catch(error) {
             console.log("Error al registrarse", error);
         } finally {
