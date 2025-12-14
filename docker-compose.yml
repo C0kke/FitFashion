@@ -26,6 +26,7 @@ services:
 
   api_gateway:
     build: ./api_gateway
+    restart: always
     ports:
       - "3004:3004"
     depends_on:
@@ -36,6 +37,7 @@ services:
 
   ms_auth_worker:
     build: ./ms_auth
+    restart: always
     depends_on:
       - kafka
     volumes:
@@ -47,6 +49,7 @@ services:
 
   frontend:
     build: ./FrontFitFashion
+    restart: always
     ports:
       - "8080:80"
     depends_on:
