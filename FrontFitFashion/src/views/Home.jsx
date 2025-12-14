@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from "../components/Navbar";
-import CartSidebar from "../components/CartSidebar";
 import { useCart } from '../store/CartContext';
 import './styles/Home.css';
 
@@ -33,19 +31,15 @@ const productos = [
 ]
 
 const Home = () => {
-    const [isCartOpen, setIsCartOpen] = useState(false);
-    const openCart = () => setIsCartOpen(true);
-    const closeCart = () => setIsCartOpen(false);
-    const { addItem } = useCart();
+    const { addItem, openCart } = useCart();
 
     const handleAddToCart = (producto) => {
         addItem(producto);
-        openCart();
+        /* openCart(); */
     }
 
     return (
         <div className="main-container">
-            <Navbar onOpenCart={openCart} />
             <div className="content">
                 <span>Nuevos productos</span>
                 <div className="productsSection">
@@ -60,7 +54,6 @@ const Home = () => {
                     ))}
                 </div>
             </div>
-            <CartSidebar isOpen={isCartOpen} onClose={closeCart} />
         </div>
     );
 };

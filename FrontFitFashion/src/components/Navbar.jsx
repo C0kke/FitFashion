@@ -3,29 +3,31 @@ import CartIcon from "../assets/cart.svg";
 import "./styles/Navbar.css";
 import axios from 'axios';
 import { useCart } from '../store/CartContext'; 
+import { useNavigate } from 'react-router-dom';
 
 const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
-const Navbar = ({ onOpenCart }) => { 
-    const { totalItems } = useCart(); 
+const Navbar = () => {
+    const { totalItems, openCart } = useCart(); 
     
+    const navigate = useNavigate();
+
     const user = localStorage.getItem("user");
-    console.log("Navbar user:", user);
     
     const navigateToSimulate = () => {
-        window.location.href = "#";
+        console.log("Simulando...");
     };
 
     const navigateToProfile = () => {
         if (!user) {
-            window.location.href = "/login";
+            navigate("/login");
             return;
         }
-        window.location.href = "/profile";
+        navigate("/profile");
     };
 
     const navigateToHome = () => {
-        window.location.href = "/";
+        navigate("/");
     };
 
     const handleLogout = async () => {
@@ -41,17 +43,19 @@ const Navbar = ({ onOpenCart }) => {
                 console.error("Logout failed", error);
             }
             localStorage.removeItem("user");
-            window.location.reload();
+            navigate("/login");
+            window.location.reload(); 
         }
     };
 
     return (
         <div className="navbar">
-            <h1 onClick={navigateToHome}>FitFashion</h1>
+            <h1 onClick={navigateToHome} style={{cursor: 'pointer'}}>FitFashion</h1>
+            
             <div className="rightSection">
                 <button onClick={navigateToSimulate}>Simular outfit</button>
 
-                <button onClick={onOpenCart} className="cart-button">
+                <button onClick={openCart} className="cart-button">
                     <img src={CartIcon} alt="Cart Icon" className="cartIcon" />
                     {totalItems > 0 && <span className="cart-count">{totalItems}</span>}
                 </button>

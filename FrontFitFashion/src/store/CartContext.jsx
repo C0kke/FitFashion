@@ -5,20 +5,24 @@ export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
     const [items, setItems] = useState([]);  
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
+    const openCart = () => setIsCartOpen(true);
+    const closeCart = () => setIsCartOpen(false);
 
     const addItem = (product) => {
         setItems(prevItems => {
-        const existingItem = prevItems.find(item => item.id === product.id);
+            const existingItem = prevItems.find(item => item.id === product.id);
 
-        if (existingItem) {
-            return prevItems.map(item =>
-            item.id === product.id
-                ? { ...item, quantity: item.quantity + 1 }
-                : item
-            );
-        } else {
-            return [...prevItems, { ...product, quantity: 1 }];
-        }
+            if (existingItem) {
+                return prevItems.map(item =>
+                item.id === product.id
+                    ? { ...item, quantity: item.quantity + 1 }
+                    : item
+                );
+            } else {
+                return [...prevItems, { ...product, quantity: 1 }];
+            }
         });
     };
 
@@ -36,11 +40,14 @@ export const CartProvider = ({ children }) => {
         addItem,
         removeItem,
         totalItems,
-    }), [items]);
+        isCartOpen,
+        openCart,
+        closeCart,
+    }), [items, isCartOpen]);
 
     return (
         <CartContext.Provider value={contextValue}>
-        {children}
+            {children}
         </CartContext.Provider>
     );
-    };
+};
