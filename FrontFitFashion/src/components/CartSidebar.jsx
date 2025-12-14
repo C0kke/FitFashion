@@ -1,11 +1,14 @@
 import { useCart } from '../store/CartContext';
 import './styles/CartSidebar.css'; 
+import { useNavigate } from 'react-router-dom';
 
 function CartSidebar({ isOpen, onClose }) {
     const { items, removeItem } = useCart();
 
     const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const sidebarClass = `cart-sidebar ${isOpen ? 'open' : 'closed'}`;
+
+    const navigate = useNavigate();
 
     return (
         <>
@@ -40,7 +43,7 @@ function CartSidebar({ isOpen, onClose }) {
                 <strong>Total:</strong> 
                 <strong>${total.toFixed(2)}</strong>
             </div>
-            <button className="checkout-button" disabled={items.length === 0}>
+            <button onClick={() => navigate('/checkout')} className="checkout-button" disabled={items.length === 0}>
                 Proceder al Pago
             </button>
             </div>

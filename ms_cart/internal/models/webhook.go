@@ -5,7 +5,7 @@ type WebhookNotification struct {
 	LiveMode  bool   `json:"live_mode"`
 	Type      string `json:"type"` 
 	DateCreated string `json:"date_created"`
-	UserID    int64  `json:"user_id"`
+	UserID    string  `json:"user_id"`
 	APIVersion string `json:"api_version"`
 	Data struct {
 		ID string `json:"id"`

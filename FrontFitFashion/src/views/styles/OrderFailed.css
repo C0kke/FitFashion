@@ -1,0 +1,129 @@
+:root {
+    --color-failure: #d32f2f;
+    --color-failure-light: #f44336;
+}
+
+.failed-container {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background-color: var(--bg-light); 
+}
+
+.failed-card {
+    background-color: var(--bg-white);
+    border-radius: 15px;
+    padding: 40px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); 
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.failed-header {
+    text-align: center;
+    border-bottom: 2px solid var(--color-failure); 
+    padding-bottom: 20px;
+}
+
+.failed-icon {
+    font-size: 3em;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.failed-header h2 {
+    color: var(--color-failure); 
+    font-size: 2.2em;
+    margin: 5px 0;
+}
+
+.failed-header p {
+    color: #666;
+    margin-top: 5px;
+}
+
+.failure-reason {
+    background-color: #ffebee;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 5px solid var(--color-failure-light);
+}
+
+.failure-reason h3 {
+    color: var(--color-failure-light);
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
+}
+
+.failure-reason p {
+    margin: 0;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.cart-summary-section {
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.pending-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.total-amount {
+    color: var(--color-failure);
+}
+
+.failed-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.retry-payment-button {
+    width: 100%;
+    padding: 1em;
+    background-color: var(--color-accent); 
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.retry-payment-button:hover {
+    background-color: #4a148c;
+    transform: translateY(-2px);
+}
+
+.go-home-button-secondary {
+    width: 100%;
+    padding: 1em;
+    background: none;
+    color: var(--color-primary);
+    border: 2px solid #ccc;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.go-home-button-secondary:hover {
+    background-color: #f0f0f0;
+    border-color: var(--color-primary);
+}

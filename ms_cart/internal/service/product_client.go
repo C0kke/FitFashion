@@ -22,12 +22,12 @@ func (m *MockProductClient) GetProductDetails(ctx context.Context, productID str
     case "P101":
         return &ProductDetails{
             Name: "Zapatillas Running X-Fast",
-            Price: 85,
+            Price: 85000,
         }, nil
     case "P202":
         return &ProductDetails{
             Name: "Pantalón Cargo Casual",
-            Price: 45,
+            Price: 45000,
         }, nil
     default:
         return nil, fmt.Errorf("producto ID %s no válido o stock agotado (mock)", productID)

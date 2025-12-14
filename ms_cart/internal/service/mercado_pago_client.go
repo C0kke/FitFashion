@@ -27,7 +27,6 @@ func NewMercadoPagoClient(accessToken string) (PaymentClient, error) {
     }, nil
 }
 
-// Estructuras para las peticiones a la API de Mercado Pago
 type MPItem struct {
     Title      string  `json:"title"`
     Quantity   int     `json:"quantity"`
@@ -65,7 +64,7 @@ func (m *MercadoPagoClient) StartTransaction(ctx context.Context, orderID uint, 
         mpItems = append(mpItems, MPItem{
             Title:     item.NameSnapshot,
             Quantity:  item.Quantity,
-            UnitPrice: int64(item.UnitPrice * 100),
+            UnitPrice: int64(item.UnitPrice),
         })
     }
 
