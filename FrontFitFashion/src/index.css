@@ -7,13 +7,22 @@
   margin: 0;
   padding: 0;
 
-  /* Palette: Orange - Brown - Purple */
+  /* ESTILOS */
+
+  --BORDER-RADIUS: 12px;
+
+  /* COLORES */
   --color-primary: #5D4037; /* Brown */
   --color-secondary: #7B1FA2; /* Purple */
+  --color-white: #fdf7ff; /* White */
   --color-accent: #FF6F00; /* Orange */
   --bg-light: #FFF8E1; /* Light Cream/Orange */
   --bg-white: #FFFFFF;
+  --bg-accent: #FFF3E0;
   --text-color: #3E2723;
+  --text-color-light: #6d564f;
+  --error-color: #D32F2F;
+  --success-color: #388E3C;
   
   background-color: var(--bg-light);
   color: var(--text-color);

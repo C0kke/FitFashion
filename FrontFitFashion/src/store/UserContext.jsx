@@ -26,6 +26,7 @@ export const UserProvider = ({ children }) => {
 
                 if (res.data.status === 200) {
                     setUser({
+                        first_name: res.data.first_name,
                         username: res.data.username,
                         email: res.data.email,
                         role: res.data.role,
@@ -44,7 +45,6 @@ export const UserProvider = ({ children }) => {
 
     const login = (userData, token) => {
         localStorage.setItem("user", token);
-        console.log(userData);
         setUser({ ...userData, token });
     };
 

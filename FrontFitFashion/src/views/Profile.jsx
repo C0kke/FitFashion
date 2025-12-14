@@ -1,28 +1,241 @@
+import { useState, useEffect } from "react";
 import { useUser } from "../store/UserContext";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import './styles/Profile.css';
 
+const BackURL = import.meta.env.VITE_GATEWAY_URL;
+
 const Profile = () => {
-    const { user, loading } = useUser();
+    const { user, setUser, loading } = useUser();
+    const navigate = useNavigate();
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [msg, setMsg] = useState({ type: "", text: "" });
+
+    const [formData, setFormData] = useState({
+        username: "",
+        first_name: "",
+        email: "",
+        current_password: "",
+        new_password: ""
+    });
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                username: user.username || "",
+                first_name: user.first_name || "",
+                email: user.email || "",
+                new_password: "",
+                current_password: ""
+            });
+        }
+    }, [user]);
 
     const handleGoToUsers = () => {
-        window.location.href = "/admin/users";
+        navigate("/admin/users");
     }
 
-    if (loading) return <div className="profile-container">Cargando perfil...</div>;
-    if (!user) return <div className="profile-container">No hay sesión activa.</div>;
+    const getInitials = (name) => {
+        if (!name) return "U";
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    };
+
+    const toggleEdit = () => {
+        if (isEditing) {
+            setFormData({
+                username: user.username || "",
+                first_name: user.first_name || "",
+                email: user.email || "",
+                new_password: "",
+                current_password: ""
+            });
+            setMsg({ type: "", text: "" });
+        }
+        setIsEditing(!isEditing);
+    };
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSaveChanges = async (e) => {
+        e.preventDefault();
+        setMsg({ type: "", text: "" });
+        setIsSubmitting(true);
+
+        const token = localStorage.getItem("user");
+
+        try {
+            const profilePayload = {
+                username: formData.username,
+                first_name: formData.first_name,
+                email: formData.email
+            };
+
+            const resProfile = await axios.patch(`${BackURL}/auth/users/me`, profilePayload, {
+                headers: { Authorization: `Token ${token}` }
+            });
+
+            if (formData.new_password) {
+                if (!formData.current_password) {
+                    throw new Error("Para cambiar la contraseña, debes ingresar tu contraseña actual.");
+                }
+
+                await axios.post(`${BackURL}/auth/users/set_password/`, {
+                    current_password: formData.current_password,
+                    new_password: formData.new_password,
+                    re_new_password: formData.new_password
+                }, {
+                    headers: { Authorization: `Token ${token}` }
+                });
+            }
+
+            setMsg({ type: "success", text: "Perfil actualizado correctamente." });
+            setUser(prevUser => ({ 
+                ...prevUser, 
+                ...resProfile.data 
+            }));
+            setIsEditing(false);
+            setFormData(prev => ({ ...prev, new_password: "", current_password: "" }));
+        } catch (error) {
+            console.error(error);
+            const errorData = error.response?.data;
+            let errorText = error.message;
+
+            if (errorData) {
+                if (errorData.current_password) errorText = "Contraseña actual incorrecta.";
+                else if (errorData.password) errorText = errorData.password[0];
+                else if (errorData.username) errorText = "Ese nombre de usuario ya está en uso.";
+                else errorText = "Error al guardar cambios.";
+            }
+            
+            setMsg({ type: "error", text: errorText });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (loading) return <div className="profile-loading">Cargando perfil...</div>;
+    if (!user) return <div className="profile-loading">No hay sesión activa.</div>;
+
+    const displayName = formData.username || 'Usuario';
 
     return (
         <div className="profile-container">
-            <div className="content">
-                <h1>Perfil de Usuario</h1>
-                <p>Nombre: {user.first_name || user.username || 'Sin nombre'}</p>
-                <p>Nombre de usuario: {user.username}</p>
-                <p>Email: {user.email}</p>
+            <div className={`profile-card ${isEditing ? 'editing-mode' : ''}`}>
                 
-                {user.role === 'ADMIN' && (
-                    <div className="admin-section" style={{marginTop: '20px', borderTop: '1px solid #ccc', paddingTop: '10px'}}>
-                        <h2>Sección de Administrador</h2>
-                        <p>Tienes acceso a funciones administrativas.</p>
+                <div className="profile-header">
+                    <div className="avatar-circle">
+                        {user.profileImage ? (
+                            <img src={user.profileImage} alt="Avatar" className="avatar-image" />
+                        ):(
+                            getInitials(displayName)
+                        )}
+                    </div>
+                    <h1 className="user-name">{displayName}</h1>
+                    {user.role === 'ADMIN' && (
+                        <span className="role-badge">{user.role}</span>
+                    )}
+                </div>
+
+                <form className="profile-details" onSubmit={handleSaveChanges}>
+                    <div className="detail-item">
+                        <label>Nombre Completo</label>
+                        <input 
+                            type="text" 
+                            name="first_name"
+                            className="profile-input"
+                            value={formData.first_name}
+                            onChange={handleInputChange}
+                            disabled={!isEditing} 
+                            placeholder="Tu nombre"
+                        />
+                    </div>
+
+                    <div className="detail-item">
+                        <label>Nombre de Usuario</label>
+                        <input 
+                            type="text" 
+                            name="username"
+                            className="profile-input"
+                            value={formData.username}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                        />
+                    </div>
+
+                    <div className="detail-item">
+                        <label>Correo Electrónico</label>
+                        <input 
+                            type="email" 
+                            name="email"
+                            className="profile-input"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                        />
+                    </div>
+
+                    {isEditing && (
+                        <div className="password-section">
+                            <div className="detail-item">
+                                <label>Nueva Contraseña</label>
+                                <input 
+                                    type="password" 
+                                    name="new_password"
+                                    className="profile-input editing"
+                                    value={formData.new_password}
+                                    onChange={handleInputChange}
+                                    placeholder="Nueva contraseña (opcional)"
+                                />
+                            </div>
+
+                            {formData.new_password && (
+                                <div className="detail-item highlight-required">
+                                    <label>Contraseña Actual (Requerido para guardar)</label>
+                                    <input 
+                                        type="password" 
+                                        name="current_password"
+                                        className="profile-input editing"
+                                        value={formData.current_password}
+                                        onChange={handleInputChange}
+                                        placeholder="Ingresa tu clave actual"
+                                        required
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {msg.text && <div className={`msg-box ${msg.type}`}>{msg.text}</div>}
+
+                    <div className="profile-actions">
+                        {!isEditing ? (
+                            <button type="button" onClick={toggleEdit} className="btn-secondary">
+                                Editar Perfil
+                            </button>
+                        ) : (
+                            <div className="edit-buttons">
+                                <button type="button" onClick={toggleEdit} className="btn-cancel">
+                                    Cancelar
+                                </button>
+                                <button type="submit" className="btn-save" disabled={isSubmitting}>
+                                    {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </form>
+                
+                {user.role === 'ADMIN' && !isEditing && (
+                    <div className="admin-section">
+                        <div className="admin-header">
+                            <h3>Panel de Administrador</h3>
+                        </div>
+                        <p>Gestión de usuarios de la plataforma.</p>
                         <button onClick={handleGoToUsers} className="btn-admin">
                             Administrar Usuarios
                         </button>

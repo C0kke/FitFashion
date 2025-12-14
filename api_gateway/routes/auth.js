@@ -118,4 +118,62 @@ router.get('/users', async (req, res) => {
     }
 });
 
+router.patch('/users/me', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const correlationId = uuidv4();
+    const { producer, responseEmitter } = req;
+
+    if (!authHeader) {
+        return res.status(401).json({ error: "No autorizado" });
+    }
+
+    try {
+        await producer.send({
+            topic: 'auth-request',
+            messages: [{ 
+                value: JSON.stringify({ 
+                    type: 'UPDATE_PROFILE',
+                    token: authHeader,
+                    data: req.body,
+                    correlationId
+                }) 
+            }],
+        });
+
+        const result = await waitForResponse(correlationId, responseEmitter);
+        res.status(result.status).json(result);
+    } catch (error) {
+        res.status(504).json({ error: error.message });
+    }
+});
+
+router.patch('/users/:id', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const targetUserId = req.params.id;
+    const correlationId = uuidv4();
+    const { producer, responseEmitter } = req;
+
+    if (!authHeader) return res.status(401).json({ error: "No autorizado" });
+
+    try {
+        await producer.send({
+            topic: 'auth-request',
+            messages: [{ 
+                value: JSON.stringify({ 
+                    type: 'ADMIN_UPDATE_USER',
+                    admin_token: authHeader,
+                    target_id: targetUserId,
+                    data: req.body,
+                    correlationId
+                }) 
+            }],
+        });
+
+        const result = await waitForResponse(correlationId, responseEmitter);
+        res.status(result.status).json(result);
+    } catch (error) {
+        res.status(504).json({ error: error.message });
+    }
+});
+
 module.exports = router;

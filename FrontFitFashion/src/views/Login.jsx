@@ -76,7 +76,7 @@ const Login = () => {
                 setIsRegister(false);
             }
         } catch(error) {
-            console.log("Error al registrarse", error);
+            console.error("Error al registrarse", error);
         } finally {
             setIsLoading(false);
         }

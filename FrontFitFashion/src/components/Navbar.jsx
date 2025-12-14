@@ -43,7 +43,7 @@ const Navbar = () => {
                 console.error("Logout failed", error);
             }
             localStorage.removeItem("user");
-            navigate("/login");
+            navigate("/");
             window.location.reload(); 
         }
     };
