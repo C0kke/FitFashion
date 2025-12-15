@@ -2,9 +2,10 @@ const express = require('express');
 const { Kafka } = require('kafkajs');
 const EventEmitter = require('events');
 const cors = require('cors');
-require('dotenv').config();
-
-const authRoutes = require('./routes/auth'); 
+const schema = require('./graphql/index');
+require('dotenv').config(); 
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
 
 const app = express();
 app.use(express.json());
@@ -24,16 +25,24 @@ const consumer = kafka.consumer({ groupId: 'gateway-listener-group' });
 async function startGateway() {
     await producer.connect();
     await consumer.connect();
+    
     await consumer.subscribe({ topic: 'auth-response', fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ message }) => {
-            const value = JSON.parse(message.value.toString());
-            if (value.correlationId) {
-                responseEmitter.emit(value.correlationId, value);
+            try {
+                const value = JSON.parse(message.value.toString());
+                if (value.correlationId) {
+                    responseEmitter.emit(value.correlationId, value);
+                }
+            } catch (err) {
+                console.error("Error parseando mensaje en Gateway:", err);
             }
         },
     });
+
+    const server = new ApolloServer({ schema });
+    await server.start();
 
     app.use((req, res, next) => {
         req.producer = producer;
@@ -41,13 +50,28 @@ async function startGateway() {
         next();
     });
 
-    // RUTAS
-    app.use('/api/auth', authRoutes);
+    app.use(
+        '/graphql',
+        expressMiddleware(server, {
+            context: async ({ req }) => {
+                const authHeader = req.headers.authorization || '';
+                const rawKey = authHeader.replace('Token ', '').replace('Bearer ', '').trim();
+                const djangoToken = rawKey ? `Token ${rawKey}` : null;
+                
+                return {
+                    producer,
+                    responseEmitter,
+                    token: djangoToken 
+                };
+            },
+        })
+    );
 
-    const PORT = process.env.PORT;
+    const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
+        console.log(`GraphQL listo en http://localhost:${PORT}/graphql`);
     });
 }
 
-startGateway();
+startGateway().catch(err => console.error("Error iniciando Gateway:", err));
