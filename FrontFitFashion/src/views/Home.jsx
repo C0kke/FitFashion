@@ -41,14 +41,12 @@ const Home = () => {
         <div className="main-container"><div className="content"><p>Error cargando productos: {error.message}</p></div></div>
     );
 
-    const productosGateway = data?.products || [];
-
     return (
         <div className="main-container">
             <div className="content">
                 <span>Nuevos productos</span>
                 <div className="productsSection">
-                    {productosGateway.map((producto) => (
+                    {productos.map((producto) => (
                         <div key={producto.id} className="productCard" onClick={() => navigate(`/productdetail/${producto.id}`)} >
                             <h3 className="productName">{producto.name}</h3>
                             <img src={producto.builderImage} alt={producto.name} className="productImage" />
