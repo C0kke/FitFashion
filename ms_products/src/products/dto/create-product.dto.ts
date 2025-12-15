@@ -5,7 +5,7 @@ export class CreateProductDto {
   @IsString()
   name: string;
 
-  @IsNumber()
+  @IsInt({ message: 'El precio debe ser un número entero' }) 
   @Min(0)
   price: number;
 
