@@ -3,13 +3,12 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
 )
-
-const ContextUserIDKey = "UserID" 
 
 type CartHandler struct {
 	CartService *service.CartService
@@ -46,7 +45,22 @@ func (h *CartHandler) AdjustItemQuantity(c *gin.Context) {
     updatedCart, err := h.CartService.UpdateItemQuantity(ctx, userID, payload.ProductID, payload.QuantityChange) 
     
 	if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al ajustar la cantidad", "details": err.Error()})
+		errStr := err.Error()
+
+		if strings.Contains(errStr, "Stock insuficiente") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errStr})
+			return
+		}
+		if strings.Contains(errStr, "fallo RPC") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Fallo de comunicación con el servicio de productos"})
+			return
+		}
+        if strings.Contains(errStr, "no existe en el carrito") {
+            c.JSON(http.StatusBadRequest, gin.H{"error": errStr})
+            return
+        }
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al ajustar la cantidad", "details": errStr})
 		return
 	}
 	
@@ -91,13 +105,20 @@ func (h *CartHandler) GetCart(c *gin.Context) {
     ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-    cart, err := h.CartService.GetCartByUserID(ctx, userID)
-    if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al obtener carrito", "details": err.Error()})
+    cartData, err := h.CartService.GetCartWithPrices(ctx, userID)
+	if err != nil {
+		errStr := err.Error()
+		
+		if strings.Contains(errStr, "fallo RPC") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Fallo de comunicación con el servicio de productos"})
+			return
+		}
+		
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al obtener carrito y precios", "details": errStr})
 		return
 	}
 
-    c.JSON(http.StatusOK, cart)
+	c.JSON(http.StatusOK, cartData)
 }
 
 func (h *CartHandler) ClearCart(c *gin.Context) {

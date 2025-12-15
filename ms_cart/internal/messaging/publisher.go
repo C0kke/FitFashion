@@ -8,16 +8,15 @@ import (
 
 	"github.com/streadway/amqp"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
-	"github.com/C0kke/FitFashion/ms_cart/pkg/messaging"
 )
 
 type OrderPublisher struct {
 	conn *amqp.Connection
 }
 
-func NewOrderPublisher() *OrderPublisher {
+func NewOrderPublisher(conn *amqp.Connection) *OrderPublisher {
 	return &OrderPublisher{
-		conn: messaging.RabbitMQConn,
+		conn: conn,
 	}
 }
 

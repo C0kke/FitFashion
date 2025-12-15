@@ -15,6 +15,7 @@ type OrderRepository interface {
 	FindByID(ctx context.Context, orderID uint) (*models.Order, error)
 	FindByUserID(ctx context.Context, userID uint) ([]models.Order, error)
 	UpdateStatus(ctx context.Context, orderID uint, status string) error
+	FindAll(ctx context.Context) ([]models.Order, error)
 }
 
 
@@ -73,4 +74,13 @@ func (r *PostgresOrderRepository) UpdateStatus(ctx context.Context, orderID uint
 	}
 	
 	return nil
+}
+
+func (r *PostgresOrderRepository) FindAll(ctx context.Context) ([]models.Order, error) {
+    var orders []models.Order
+    result := r.DB.WithContext(ctx).Find(&orders) 
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return orders, nil
 }

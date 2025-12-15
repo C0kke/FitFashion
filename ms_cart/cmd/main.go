@@ -8,9 +8,11 @@ import (
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database" 
 	"github.com/joho/godotenv"
 	"github.com/C0kke/FitFashion/ms_cart/api/handlers"
+	"github.com/C0kke/FitFashion/ms_cart/internal/product"
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
 	"github.com/C0kke/FitFashion/ms_cart/internal/messaging"
+	"github.com/C0kke/FitFashion/ms_cart/internal/user"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/router"
 	mqconn "github.com/C0kke/FitFashion/ms_cart/pkg/messaging"
 )
@@ -37,8 +39,13 @@ func main() {
 	database.ConectarRedis()
 	mqconn.ConectarRabbitMQ()
 
-	userClient := &service.MockUserClient{}
-	productClient := &service.MockProductClient{}
+	rabbitConn := mqconn.RabbitMQConn
+	if rabbitConn == nil {
+		log.Fatal("Fallo al obtener la conexión de RabbitMQ (RabbitMQConn es nil)")
+	}
+
+	productClientRPC := product.NewProductClient(rabbitConn)
+	userClient := user.NewRpcClient(rabbitConn)
 
 	mpAccessToken := os.Getenv("MP_ACCESS_TOKEN")
     if mpAccessToken == "" {
@@ -53,10 +60,10 @@ func main() {
 	cartRepo := repository.NewRedisCartRepository()
 	orderRepo := repository.NewPostgresOrderRepository()
 
-    orderPublisher := messaging.NewOrderPublisher() 
+    orderPublisher := messaging.NewOrderPublisher(rabbitConn) 
 
-	cartService := service.NewCartService(cartRepo)
-	orderService := service.NewOrderService(orderRepo, cartRepo, userClient, productClient, orderPublisher, paymentClient)
+	cartService := service.NewCartService(cartRepo, productClientRPC)
+	orderService := service.NewOrderService(orderRepo, cartRepo, userClient, productClientRPC, orderPublisher, paymentClient)
 
 	cartHandler := handlers.NewCartHandler(cartService)
 	orderHandler := handlers.NewOrderHandler(orderService)
