@@ -1,0 +1,15 @@
+vendor/
+node_modules/
+.vscode/
+.idea/
+
+*.exe
+*.bin
+*.out
+ms_cart
+
+.env
+*.log
+
+.git
+.gitignore
