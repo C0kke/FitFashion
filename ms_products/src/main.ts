@@ -18,6 +18,7 @@ async function bootstrap() {
       queueOptions: {
         durable: true 
       },
+      noAck: false,
     },
   });
 
@@ -26,5 +27,7 @@ async function bootstrap() {
 
   console.log(`Application is running on: 3002`);
   console.log(`Microservice is listening on queue: ${process.env.RABBITMQ_QUEUE || 'products_queue'}`);
+
+  console.log("🔌 CONECTANDO A DB:", process.env.DB_DATABASE);
 }
 bootstrap();
