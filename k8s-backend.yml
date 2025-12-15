@@ -1,0 +1,168 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: auth-sqlite-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-auth-service
+spec:
+  ports:
+  - port: 3001
+  selector:
+    app: ms-auth
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-auth
+  template:
+    metadata:
+      labels:
+        app: ms-auth
+    spec:
+      containers:
+      - name: ms-auth
+        image: fitfashion/ms-auth:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "manage.py", "run_kafka"]
+        env:
+        - name: KAFKA_BROKER
+          value: "kafka-service:9092"
+        - name: SECRET_KEY
+          value: "remivichicoke"
+        - name: DEBUG
+          value: "False"
+        - name: DJANGO_SETTINGS_MODULE
+          value: "ms_auth.settings"
+        resources:
+          requests:
+            cpu: "100m" 
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+        volumeMounts:
+        - name: sqlite-storage
+          mountPath: /app/db.sqlite3
+          subPath: db.sqlite3
+      volumes:
+      - name: sqlite-storage
+        persistentVolumeClaim:
+          claimName: auth-sqlite-pvc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-auth
+  template:
+    metadata:
+      labels:
+        app: ms-auth
+    spec:
+      containers:
+      - name: ms-auth
+        image: fitfashion/ms-auth:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "manage.py", "run_kafka"]
+        env:
+        - name: KAFKA_BROKER
+          value: "kafka-service:9092"
+        - name: SECRET_KEY
+          value: "remivichicoke"
+        - name: DEBUG
+          value: "False"
+        - name: DJANGO_SETTINGS_MODULE
+          value: "ms_auth.settings"
+        volumeMounts:
+        - name: sqlite-storage
+          mountPath: /app/db.sqlite3
+          subPath: db.sqlite3
+      volumes:
+      - name: sqlite-storage
+        persistentVolumeClaim:
+          claimName: auth-sqlite-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-products-service
+spec:
+  ports:
+  - port: 3002
+  selector:
+    app: ms-products
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-products
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-products
+  template:
+    metadata:
+      labels:
+        app: ms-products
+    spec:
+      containers:
+      - name: ms-products
+        image: fitfashion/ms-products:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RABBITMQ_URL
+          value: "amqp://guest:guest@rabbitmq-service:5672"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 3004
+    targetPort: 3004
+  selector:
+    app: gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: fitfashion/gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3004
+        env:
+        - name: PORT
+          value: "3004"
+        - name: KAFKA_BROKER
+          value: "kafka-service:9092"
+        - name: RABBITMQ_URL
+          value: "amqp://guest:guest@rabbitmq-service:5672"
