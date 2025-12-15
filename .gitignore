@@ -18,3 +18,5 @@ __pycache__/
 
 /media/
 docker-compose-infra.yml
+
+pgdata/
