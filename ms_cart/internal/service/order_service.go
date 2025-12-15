@@ -11,9 +11,9 @@ import (
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database"
-    "github.com/C0kke/FitFashion/ms_cart/internal/user"
     "github.com/C0kke/FitFashion/ms_cart/internal/product"
     "github.com/C0kke/FitFashion/ms_cart/internal/messaging"
+    "github.com/C0kke/FitFashion/ms_cart/internal/payments"
 )
 
 const CheckoutTTL = 10 * time.Minute 
@@ -23,26 +23,24 @@ type OrderService struct {
 	CartRepo      repository.CartRepository
 	RedisClient   *redis.Client 
     
-    UserClient    user.ClientInterface
     ProductClient product.ClientInterface
 
     OrderPublisher *messaging.OrderPublisher
-    PaymentClient PaymentClient
+    PaymentClient payments.PaymentClient
 }
 
-func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, userClient user.ClientInterface, productClient product.ClientInterface, orderPublisher *messaging.OrderPublisher, paymentClient PaymentClient) *OrderService {
+func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productClient product.ClientInterface, orderPublisher *messaging.OrderPublisher, paymentClient payments.PaymentClient) *OrderService {
 	return &OrderService{
 		OrderRepo:   orderRepo,
 		CartRepo:    cartRepo,
 		RedisClient: database.RedisClient,
-        UserClient:  userClient,
         ProductClient: productClient,
         OrderPublisher: orderPublisher,
         PaymentClient: paymentClient,
 	}
 }
 
-func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*models.CheckoutResponse, error) {
+func (s *OrderService) ProcesarCompra(ctx context.Context, userID string, shippingAddress string) (*models.CheckoutResponse, error) {
     cart, err := s.CartRepo.FindByUserID(ctx, userID)
 	if err != nil { return nil, fmt.Errorf("fallo al buscar carrito: %w", err) }
     if len(cart.Items) == 0 { return nil, fmt.Errorf("el carrito está vacío") }
@@ -52,17 +50,17 @@ func (s *OrderService) ProcesarCompra(ctx context.Context, userID string) (*mode
     err = s.RedisClient.Expire(ctx, cartKey, CheckoutTTL).Err()
     if err != nil { return nil, fmt.Errorf("fallo al extender TTL: %w", err) }
     
-    user, err := s.UserClient.GetUserDetails(ctx, userID)
-    if err != nil { return nil, fmt.Errorf("fallo al obtener detalles de usuario: %w", err) }
+    userIDUint64, err := strconv.ParseUint(userID, 10, 64)
+    if err != nil { return nil, fmt.Errorf("ID de usuario RPC inválido: %w", err) }
 
     orderItems, total, err := s.getSnapshotAndTotal(ctx, cart)
     if err != nil { return nil, fmt.Errorf("fallo al obtener snapshot de productos: %w", err) }
     
     newOrder := &models.Order{
-        UserID: user.ID,
+        UserID: uint(userIDUint64),
         Total: total,
         Status: "PENDIENTE", 
-        ShippingAddress: user.ShippingAddress, 
+        ShippingAddress: shippingAddress, 
         OrderItems: orderItems,
     }
 

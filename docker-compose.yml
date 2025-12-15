@@ -144,5 +144,13 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
 volumes:
+  pgdata:
+    driver: local
+
+  rabbitmq_data:
+    driver: local
+  
   redis_data:
+    driver: local
