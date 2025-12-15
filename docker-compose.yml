@@ -39,20 +39,20 @@ services:
       timeout: 5s
       retries: 5
   
-  # redis:
-  #   image: redis:7-alpine
-  #   restart: always
-  #   ports:
-  #     - "6379:6379"
-  #   container_name: redis-cache
-  #   command: redis-server --appendonly yes
-  #   healthcheck: 
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   volumes:
-  #     - redis_data:/data
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    container_name: redis-cache
+    command: redis-server --appendonly yes
+    healthcheck: 
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
 
   postgres:
     image: postgres:15
@@ -87,6 +87,8 @@ services:
   ms_auth_worker:
     build: ./ms_auth
     restart: always
+    ports:
+      - "3001:3001"
     depends_on:
       kafka:
         condition: service_healthy
@@ -108,25 +110,32 @@ services:
     depends_on:
       - api_gateway
   
-  # ms_cart:
-  #   build: ./ms_cart 
-  #   restart: always
-  #   ports:
-  #     - "8081:8080"
-  #   environment:
-  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #     DB_HOST: postgres  
-  #     DB_PORT: 5432
-  #     DB_USER: fitfashion
-  #     DB_PASSWORD: postgres1234
-  #     DB_NAME: fitfashion_cart_db  
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
-  #     postgres:
-  #       condition: service_started
+  ms_cart:
+    build: ./ms_cart 
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: fitfashion
+      DB_PASSWORD: postgres1234
+      DB_NAME: fitfashion_cart_db
+      DB_SSLMODE: disable
+      DB_TIMEZONE: UTC
+      TZ: UTC
+      MP_PUBLIC_KEY: APP_USR-146df06c-ee73-473e-b083-958e44ff501f
+      MP_ACCESS_TOKEN: APP_USR-7641317977147219-121219-14638e498a881a398225470af4291340-3062167194
+      FRONTEND_URL: docker://frontend:80
+      WEBHOOK_BASE_URL: docker://ms_cart/api/v1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
 
   ms-products:
     build: ./ms_products  
