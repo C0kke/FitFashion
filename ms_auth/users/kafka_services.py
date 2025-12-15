@@ -16,7 +16,17 @@ def get_user_from_token(token_header):
         return {'user': token_obj.user, 'error': None}
     except (Token.DoesNotExist, IndexError):
         return {'user': None, 'error': 'Token no encontrado'}
-    
+
+def serialize_user(user):
+    return {
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'first_name': user.first_name,
+        'role': getattr(user, 'role', 'CLIENTE'),
+        'date_joined': str(user.date_joined) if hasattr(user, 'date_joined') else None 
+    }
+
 def handle_login(data):
     username = data.get('username')
     password = data.get('password')
@@ -29,12 +39,9 @@ def handle_login(data):
             return {
                 'status': 200,
                 'msg': 'Login Exitoso',
+                'token': token.key,
                 'auth_token': token.key,
-                'role': getattr(user, 'role', 'user'),
-                'username': user.username,
-                'id': user.id,
-                'email': user.email,
-                'first_name': user.first_name
+                'user': serialize_user(user)
             }
         else:
             return {'status': 403, 'msg': 'Usuario inactivo'}
@@ -61,8 +68,7 @@ def handle_register(data):
             'status': 201, 
             'msg': 'Usuario creado', 
             'token': token.key,
-            'username': new_user.username,
-            'id': new_user.id
+            'user': serialize_user(new_user)
         }
     except Exception as e:
         logger.error(f"Error registro: {e}")
@@ -75,7 +81,7 @@ def handle_get_profile(data):
         if not token_header:
              return {'status': 400, 'msg': 'Token no proporcionado'}
 
-        key = token_header.replace('Token ', '').strip()
+        key = token_header.replace('Token ', '').replace('Bearer ', '').strip()
 
         try:
             token_obj = Token.objects.get(key=key)
@@ -85,12 +91,7 @@ def handle_get_profile(data):
 
         return {
             'status': 200,
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'role': getattr(user, 'role', 'user'),
-            'date_joined': str(user.date_joined)
+            'user': serialize_user(user)
         }
     except Exception as e:
         return {'status': 500, 'msg': str(e)}
@@ -116,7 +117,7 @@ def handle_update_profile(message_data):
         if not token_header:
             return {'status': 401, 'msg': 'No autorizado (Token faltante)'}
 
-        key = token_header.replace('Token ', '').strip()
+        key = token_header.replace('Token ', '').replace('Bearer ', '').strip()
 
         try:
             token_obj = Token.objects.get(key=key)
@@ -124,27 +125,19 @@ def handle_update_profile(message_data):
         except Token.DoesNotExist:
             return {'status': 401, 'msg': 'Token inválido'}
 
-        if 'first_name' in payload:
-            user.first_name = payload['first_name']
-        
-        if 'email' in payload:
-            user.email = payload['email']
-            
-        if 'username' in payload:
-            user.username = payload['username']
+        if 'first_name' in payload: user.first_name = payload['first_name']
+        if 'email' in payload: user.email = payload['email']
+        if 'username' in payload: user.username = payload['username']
 
         try:
             user.save()
         except IntegrityError:
-            return {'status': 400, 'msg': 'El nombre de usuario o email ya está en uso por otra cuenta.'}
+            return {'status': 400, 'msg': 'El nombre de usuario o email ya está en uso.'}
 
         return {
             'status': 200,
             'msg': 'Perfil actualizado correctamente',
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'role': getattr(user, 'role', 'user')
+            'user': serialize_user(user)
         }
 
     except Exception as e:
@@ -170,14 +163,10 @@ def handle_admin_update_user(message_data):
         except User.DoesNotExist:
             return {'status': 404, 'msg': 'Usuario no encontrado'}
 
-        if 'first_name' in payload:
-            target_user.first_name = payload['first_name']
-        if 'email' in payload:
-            target_user.email = payload['email']
-        if 'username' in payload:
-            target_user.username = payload['username']
-        if 'role' in payload:
-            target_user.role = payload['role']
+        if 'first_name' in payload: target_user.first_name = payload['first_name']
+        if 'email' in payload: target_user.email = payload['email']
+        if 'username' in payload: target_user.username = payload['username']
+        if 'role' in payload: target_user.role = payload['role']
         if 'password' in payload and payload['password']:
             target_user.set_password(payload['password'])
 
@@ -185,46 +174,10 @@ def handle_admin_update_user(message_data):
 
         return {
             'status': 200,
-            'msg': f'Usuario {target_user.username} actualizado correctamente'
+            'msg': f'Usuario {target_user.username} actualizado correctamente',
+            'user': serialize_user(target_user)
         }
 
     except Exception as e:
         logger.error(f"Error admin update: {e}")
         return {'status': 500, 'msg': str(e)}
-    
-def handle_auth_request(message):
-    try:
-        data = message.value 
-        msg_type = data.get('type')
-        correlation_id = data.get('correlationId')
-        print(f"DEBUG: Recibido mensaje tipo: {msg_type}")
-        response = {'status': 400, 'msg': 'Acción no soportada'}
-
-        if msg_type == 'LOGIN':
-            response = handle_login(data)
-        
-        elif msg_type == 'REGISTER':
-            response = handle_register(data)
-        
-        elif msg_type == 'GET_PROFILE':
-            response = handle_get_profile(data)
-            
-        elif msg_type == 'LIST_USERS':
-            response = handle_list_users(data)
-            
-        elif msg_type == 'UPDATE_PROFILE':
-            response = handle_update_profile(data)
-
-        elif msg_type == 'ADMIN_UPDATE_USER':
-                response = handle_admin_update_user(data)
-
-        response['correlationId'] = correlation_id
-        return response
-
-    except Exception as e:
-        logger.error(f"Error crítico en dispatcher: {e}")
-        return {
-            'status': 500, 
-            'msg': 'Error interno del servidor',
-            'correlationId': data.get('correlationId') if 'data' in locals() else None
-        }
