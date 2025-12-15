@@ -37,7 +37,8 @@ func SetupRouter(config RouterConfig) *gin.Engine {
         orders := private.Group("/orders")
         {
             orders.POST("/checkout", config.OrderHandler.Checkout)
-            orders.GET("/", config.OrderHandler.GetUserOrders) 
+            orders.GET("/", config.OrderHandler.GetUserOrders)
+            orders.GET("/all", config.OrderHandler.GetOrdersForAdmin) 
         }
     }
 

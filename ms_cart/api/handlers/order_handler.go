@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
@@ -36,13 +37,19 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 
 	order, err := h.OrderService.ProcesarCompra(ctx, userID)
 	if err != nil {
+		errStr := err.Error()
         
-        if err.Error() == "el carrito está vacío" {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "El carrito está vacío o el stock es insuficiente.", "details": err.Error()})
+        if strings.Contains(errStr, "el carrito está vacío") || strings.Contains(errStr, "no encontrado o stock agotado") {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "El carrito está vacío, faltan datos o hay un problema de stock/precio.", "details": errStr})
+			return
+		}
+        
+        if strings.Contains(errStr, "fallo RPC") {
+            c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Fallo de comunicación con un servicio externo, por favor intente más tarde.", "details": errStr})
             return
         }
-        
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al procesar la compra", "details": err.Error()})
+		
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al procesar la compra", "details": errStr})
 		return
 	}
 
@@ -106,4 +113,18 @@ func (h *OrderHandler) HandlePaymentWebhook(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK) 
+}
+
+func (h *OrderHandler) GetOrdersForAdmin(c *gin.Context) {
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+    defer cancel()
+
+    orders, err := h.OrderService.GetAllOrders(ctx) 
+    
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Fallo al obtener todas las órdenes", "details": err.Error()})
+        return
+    }
+    
+    c.JSON(http.StatusOK, orders)
 }
