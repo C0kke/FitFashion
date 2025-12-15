@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config'; // <--- Importante
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/entities/product.entity';
-import { BuilderAsset } from './products/entities/builder-asset.entity';
 
 @Module({
   imports: [
@@ -21,7 +20,7 @@ import { BuilderAsset } from './products/entities/builder-asset.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [Product, BuilderAsset],
+        entities: [Product],
         synchronize: true, 
       }),
     }),
