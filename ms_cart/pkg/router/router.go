@@ -16,7 +16,7 @@ func SetupRouter(config RouterConfig) *gin.Engine {
 	public := router.Group("/api/v1")
 
 	{
-        public.POST("/payments/webhook", config.OrderHandler.HandlePaymentWebhook) 
+        public.POST("/pagos/webhook", config.OrderHandler.HandlePaymentWebhook) 
     }
 	
 	private := router.Group("/api/v1")

@@ -8,6 +8,9 @@ import Profile from './views/Profile'
 import AdminUsers from './views/admin/AdminUsers'
 import { useCart } from './store/CartContext.jsx'
 import { useUser } from './store/UserContext.jsx'
+import OrderSuccess from './views/OrderSuccess.jsx'
+import OrderFailed from './views/OrderFailed.jsx'
+import Checkout from './views/Checkout.jsx'
 
 function App() {
   const { user, loading } = useUser()
@@ -27,6 +30,9 @@ function App() {
           <Route path="/admin/users" element={<AdminUsers />} />
         )}
         <Route path="*" element={<h2>Página no encontrada</h2>} />
+        <Route path="/success" element={<OrderSuccess />} />
+        <Route path="/failed" element={<OrderFailed />} />
+        <Route path="/checkout" element={<Checkout />} />
       </Routes>
     </>
   )
