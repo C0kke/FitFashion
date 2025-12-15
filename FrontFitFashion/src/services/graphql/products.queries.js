@@ -10,6 +10,7 @@ export const GET_PRODUCT_DETAIL_QUERY = gql`
       stock
       builderImage
       galleryImages
+      categories
     }
   }
 `;
@@ -21,7 +22,9 @@ export const GET_PRODUCTS_QUERY = gql`
       name
       price
       galleryImages
+      builderImage
       description
+      categories
     }
   }
 `;

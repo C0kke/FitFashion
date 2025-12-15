@@ -1,0 +1,176 @@
+/* Estructura principal de pantalla completa */
+.immersive-builder-page {
+    display: flex;
+    width: 100%;
+    /* Altura exacta de la pantalla menos el navbar */
+    height: calc(100vh - 80px); 
+    background-color: #fff;
+    overflow: hidden; /* Evita scrolls dobles */
+}
+
+/* Estilos comunes para paneles laterales */
+.panel-left, .panel-right {
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    z-index: 2; /* Para que la sombra quede sobre el centro */
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
+
+.panel-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: var(--color-primary);
+}
+
+/* --- PANEL IZQUIERDO (Categorías) --- */
+.panel-left {
+    width: 220px; /* Ancho fijo */
+    border-right: 1px solid #eee;
+}
+
+.category-menu {
+    list-style: none;
+    padding: 1rem;
+    margin: 0;
+    flex: 1; /* Ocupa el espacio disponible */
+    overflow-y: auto;
+}
+
+.category-menu li {
+    padding: 12px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.category-menu li:hover {
+    background-color: #fff0e6;
+    color: var(--color-accent);
+}
+
+.category-menu li.active {
+    background-color: var(--color-accent);
+    color: white;
+}
+
+.price-total-section {
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.price-amount {
+    color: var(--color-accent);
+}
+
+/* --- CENTRO GIGANTE (Escenario) --- */
+.stage-center {
+    flex: 1; /* Toma todo el ancho central */
+    position: relative;
+    /* Color de fondo del escenario (puedes poner una imagen de fondo aquí) */
+    background-color: #f8f8f8; 
+    display: flex;
+    justify-content: center;
+}
+
+/* El contenedor de las capas ocupa TODA la altura */
+.full-height-layers {
+    position: relative;
+    height: 100%; /* Clave: Alto completo */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+/* Las imágenes se estiran al máximo alto posible */
+.layer-img {
+    position: absolute;
+    top: 0;
+    height: 100%; /* Clave: Se estira verticalmente */
+    width: auto;  /* El ancho se ajusta automáticamente */
+    max-width: 100%; /* No salirse del contenedor */
+    object-fit: contain; /* Mantiene proporciones sin cortar */
+    pointer-events: none; /* Permite clicks a través */
+}
+
+/* Controles flotantes abajo */
+.floating-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    background: white;
+    padding: 10px;
+    border-radius: 50px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.btn-clean, .btn-add-all {
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+}
+
+.btn-clean {
+    background: #eee;
+    color: #666;
+}
+
+.btn-add-all {
+    background: var(--color-accent);
+    color: white;
+}
+
+/* --- PANEL DERECHO (Productos) --- */
+.panel-right {
+    width: 300px; /* Ancho fijo un poco más grande */
+    border-left: 1px solid #eee;
+}
+
+.products-scroll-grid {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+}
+
+.mini-product-item {
+    aspect-ratio: 1;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.mini-product-item:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
+
+/* Feedback visual para saber que es interactivo */
+.rnd-item:hover {
+    border: 1px dashed #00bfff !important; /* Azulito al pasar el mouse */
+    cursor: move;
+}

@@ -15,7 +15,7 @@ const Navbar = () => {
     const user = localStorage.getItem("user");
     
     const navigateToSimulate = () => {
-        console.log("Simulando...");
+        navigate("/simulate");
     };
 
     const navigateToProfile = () => {
