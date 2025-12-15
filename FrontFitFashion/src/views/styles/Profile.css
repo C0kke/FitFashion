@@ -1,3 +1,57 @@
+.address-list-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.address-input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.btn-remove-address {
+    margin-left: 0.5rem;
+    background: var(--color-accent);
+    color: var(--color-white);
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-remove-address:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-add-address {
+    margin-top: 0.5rem;
+    background: var(--color-secondary);
+    color: var(--color-white);
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-add-address:hover {
+    background: var(--color-accent);
+}
+
+.address-list-view {
+    margin: 0;
+    padding-left: 1.2rem;
+    list-style: disc inside;
+    color: var(--text-color);
+}
+
+.no-addresses {
+    color: #aaa;
+    font-style: italic;
+}
 .profile-container {
     display: flex;
     justify-content: center;

@@ -62,17 +62,25 @@ const AdminUsers = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (name === "addresses") {
-            setFormData({
-                ...formData,
-                addresses: value.split('\n').map(d => d.trim()).filter(Boolean)
-            });
+        if (name.startsWith("address-")) {
+            const idx = parseInt(name.split("-")[1], 10);
+            const newAddresses = [...formData.addresses];
+            newAddresses[idx] = value;
+            setFormData({ ...formData, addresses: newAddresses });
         } else {
-            setFormData({
-                ...formData,
-                [name]: value
-            });
+            setFormData({ ...formData, [name]: value });
         }
+    };
+
+    const handleAddAddress = () => {
+        setFormData({ ...formData, addresses: [...formData.addresses, ""] });
+    };
+
+    const handleRemoveAddress = (idx) => {
+        setFormData({
+            ...formData,
+            addresses: formData.addresses.filter((_, i) => i !== idx)
+        });
     };
 
     const handleSaveUser = async (e) => {
@@ -119,6 +127,7 @@ const AdminUsers = () => {
                     <tbody>
                         {users.map((u) => (
                             <tr key={u.id}>
+                                {console.log(u)}
                                 <td>#{u.id}</td>
                                 <td>{u.username}</td>
                                 <td>{u.first_name || "-"}</td>
@@ -130,8 +139,8 @@ const AdminUsers = () => {
                                 </td>
                                 <td>
                                     {(u.addresses && u.addresses.length > 0)
-                                        ? <ul style={{margin:0, paddingLeft:16}}>{u.addresses.map((d, i) => <li key={i}>{d}</li>)}</ul>
-                                        : <span style={{color:'#aaa'}}>Sin addresses</span>}
+                                        ? `${u.addresses[0]}${u.addresses.length > 1 ? ', ...' : ''}`
+                                        : <span style={{color:'#aaa'}}>Sin direcciones</span>}
                                 </td>
                                 <td>
                                     <button className="btn-edit" onClick={() => handleEditClick(u)}>
@@ -209,14 +218,27 @@ const AdminUsers = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>addresses (una por línea)</label>
-                                <textarea
-                                    name="addresses"
-                                    value={formData.addresses.join('\n')}
-                                    onChange={handleInputChange}
-                                    rows={3}
-                                    placeholder="Agrega una dirección por línea"
-                                />
+                                <label>Direcciones</label>
+                                <div className="admin-address-list-edit">
+                                    {formData.addresses.map((addr, idx) => (
+                                        <div key={idx} className="admin-address-input-row">
+                                            <input
+                                                type="text"
+                                                name={`address-${idx}`}
+                                                value={addr}
+                                                onChange={handleInputChange}
+                                                placeholder={`Dirección #${idx + 1}`}
+                                                className="admin-address-input"
+                                            />
+                                            <button type="button" onClick={() => handleRemoveAddress(idx)} className="btn-remove-address" disabled={formData.addresses.length === 1}>
+                                                X
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button type="button" onClick={handleAddAddress} className="btn-secondary btn-add-address">
+                                        + Añadir dirección
+                                    </button>
+                                </div>
                             </div>
                             <div className="modal-actions">
                                 <button type="button" className="btn-cancel" onClick={handleCloseModal}>

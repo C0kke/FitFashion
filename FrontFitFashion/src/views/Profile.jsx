@@ -50,7 +50,8 @@ const Profile = () => {
                 first_name: user.first_name || "",
                 email: user.email || "",
                 new_password: "",
-                current_password: ""
+                current_password: "",
+                addresses: Array.isArray(user.addresses) ? user.addresses : []
             });
             setMsg({ type: "", text: "" });
         }
@@ -59,14 +60,25 @@ const Profile = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (name === "addresses") {
-            setFormData({
-                ...formData,
-                addresses: value.split('\n').map(d => d.trim()).filter(Boolean)
-            });
+        if (name.startsWith("address-")) {
+            const idx = parseInt(name.split("-")[1], 10);
+            const newAddresses = [...formData.addresses];
+            newAddresses[idx] = value;
+            setFormData({ ...formData, addresses: newAddresses });
         } else {
             setFormData({ ...formData, [name]: value });
         }
+    };
+
+    const handleAddAddress = () => {
+        setFormData({ ...formData, addresses: [...formData.addresses, ""] });
+    };
+
+    const handleRemoveAddress = (idx) => {
+        setFormData({
+            ...formData,
+            addresses: formData.addresses.filter((_, i) => i !== idx)
+        });
     };
 
     const handleSaveChanges = async (e) => {
@@ -183,20 +195,32 @@ const Profile = () => {
                     </div>
 
                     <div className="detail-item">
-                        <label>addresses (una por línea)</label>
+                        <label>Direcciones</label>
                         {isEditing ? (
-                            <textarea
-                                name="addresses"
-                                value={formData.addresses.join('\n')}
-                                onChange={handleInputChange}
-                                rows={3}
-                                className="profile-input editing"
-                                placeholder="Agrega una dirección por línea"
-                            />
+                            <div className="address-list-edit">
+                                {formData.addresses.map((addr, idx) => (
+                                    <div key={idx} className="address-input-row">
+                                        <input
+                                            type="text"
+                                            name={`address-${idx}`}
+                                            value={addr}
+                                            onChange={handleInputChange}
+                                            placeholder={`Dirección #${idx + 1}`}
+                                            className="profile-input editing"
+                                        />
+                                        <button type="button" onClick={() => handleRemoveAddress(idx)} className="btn-remove-address" disabled={formData.addresses.length === 1}>
+                                            X
+                                        </button>
+                                    </div>
+                                ))}
+                                <button type="button" onClick={handleAddAddress} className="btn-secondary btn-add-address">
+                                    + Añadir dirección
+                                </button>
+                            </div>
                         ) : (
                             (formData.addresses && formData.addresses.length > 0)
-                                ? <ul style={{margin:0, paddingLeft:16}}>{formData.addresses.map((d, i) => <li key={i}>{d}</li>)}</ul>
-                                : <span style={{color:'#aaa'}}>Sin addresses</span>
+                                ? <ul className="address-list-view">{formData.addresses.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                                : <span className="no-addresses">Sin direcciones</span>
                         )}
                     </div>
                     {isEditing && (

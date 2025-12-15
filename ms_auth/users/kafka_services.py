@@ -25,7 +25,7 @@ def serialize_user(user):
         'first_name': user.first_name,
         'role': getattr(user, 'role', 'CLIENTE'),
         'date_joined': str(user.date_joined) if hasattr(user, 'date_joined') else None,
-        'addresses': user.addresses if hasattr(user, 'addresses') else []
+        'addresses': user.addresses if getattr(user, 'addresses', None) is not None else []
     }
 
 def handle_login(data):
@@ -99,9 +99,8 @@ def handle_get_profile(data):
 
 def handle_list_users(data):
     try:
-        users = User.objects.all().values('id', 'first_name', 'username', 'email', 'role')
-        user_list = list(users)
-        
+        users = User.objects.all()
+        user_list = [serialize_user(u) for u in users]
         return {
             'status': 200,
             'count': len(user_list),
@@ -130,7 +129,7 @@ def handle_update_profile(message_data):
         if 'email' in payload: user.email = payload['email']
         if 'username' in payload: user.username = payload['username']
         if 'addresses' in payload:
-            user.addresses = payload['addresses']
+            user.addresses = [str(addr).strip() for addr in payload['addresses'] if str(addr).strip()]
 
         try:
             user.save()
@@ -171,7 +170,7 @@ def handle_admin_update_user(message_data):
         if 'username' in payload: target_user.username = payload['username']
         if 'role' in payload: target_user.role = payload['role']
         if 'addresses' in payload:
-            target_user.addresses = payload['addresses']
+            target_user.addresses = [str(addr).strip() for addr in payload['addresses'] if str(addr).strip()]
         if 'password' in payload and payload['password']:
             target_user.set_password(payload['password'])
 

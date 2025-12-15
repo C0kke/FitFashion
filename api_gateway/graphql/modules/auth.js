@@ -39,7 +39,8 @@ const typeDefs = `#graphql
 
     updateProfile(
       first_name: String,
-      email: String
+      email: String,
+      addresses: [String]
     ): AuthResponse
 
     setPassword(

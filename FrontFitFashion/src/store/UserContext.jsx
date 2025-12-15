@@ -24,6 +24,7 @@ export const UserProvider = ({ children }) => {
                         username: userData.username,
                         email: userData.email,
                         role: userData.role,
+                        addresses: Array.isArray(userData.addresses) ? userData.addresses : [],
                         token: token
                     });
                 } else {

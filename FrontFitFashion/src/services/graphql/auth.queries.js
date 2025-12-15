@@ -44,8 +44,8 @@ export const ME_QUERY = gql`
 `;
 
 export const UPDATE_PROFILE_MUTATION = gql`
-  mutation UpdateProfile($first_name: String, $email: String) {
-    updateProfile(first_name: $first_name, email: $email) {
+  mutation UpdateProfile($first_name: String, $email: String, $addresses: [String]) {
+    updateProfile(first_name: $first_name, email: $email, addresses: $addresses) {
       status
       message
       user {
