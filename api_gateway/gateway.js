@@ -88,11 +88,41 @@ async function startGateway() {
                 const rawKey = authHeader.replace('Token ', '').replace('Bearer ', '').trim();
                 const djangoToken = rawKey ? `Token ${rawKey}` : null;
                 
+                let userContext = {
+                    user_id: null,
+                    shipping_address: null,
+                    role: null
+                };
+
+                if (djangoToken) {
+                    try {
+                        const authResponse = await sendKafkaRequest(
+                            producer, 
+                            responseEmitter, 
+                            'auth-request', 
+                            'GET_PROFILE',
+                            {}, 
+                            djangoToken
+                        );
+
+                        if (authResponse && authResponse.status === 200 && authResponse.user) {
+                            userContext.user_id = authResponse.user.id;
+                            userContext.role = authResponse.user.role;
+                            if (authResponse.user.addresses && authResponse.user.addresses.length > 0) {
+                                userContext.shipping_address = authResponse.user.addresses[0];
+                            }
+                        }
+                    } catch (error) {
+                        console.warn("Error validando token en Gateway:", error.message);
+                    }
+                }
+
                 return {
                     producer,
                     responseEmitter,
                     token: djangoToken,
-                    rabbitChannel 
+                    rabbitChannel,
+                    ...userContext
                 };
             },
         })
