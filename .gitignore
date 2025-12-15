@@ -17,3 +17,4 @@ __pycache__/
 *.pyd
 
 /media/
+docker-compose-infra.yml

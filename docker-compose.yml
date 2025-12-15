@@ -20,6 +20,12 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      start_period: 15s
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -41,8 +47,10 @@ services:
     ports:
       - "3004:3004"
     depends_on:
-      - kafka
-      - rabbitmq
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       - PORT=3004
       - KAFKA_BROKER=kafka:29092
@@ -52,16 +60,20 @@ services:
     build: ./ms_auth
     restart: always
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     volumes:
       - ./ms_auth/db.sqlite3:/app/db.sqlite3
     environment:
       - KAFKA_BROKER=kafka:29092
       - SECRET_KEY=remivichicoke
       - DEBUG=False
+      - DJANGO_SETTINGS_MODULE=ms_auth.settings
 
   frontend:
     build: ./FrontFitFashion
+    environment:
+      - VITE_GATEWAY_URL=http://localhost:3004/graphql
     restart: always
     ports:
       - "8080:80"
