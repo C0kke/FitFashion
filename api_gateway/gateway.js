@@ -8,8 +8,6 @@ const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
 const responseEmitter = new EventEmitter();
 
@@ -52,6 +50,11 @@ async function startGateway() {
 
     app.use(
         '/graphql',
+        cors({
+            origin: ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:5173'], 
+            credentials: true 
+        }),
+        express.json(),
         expressMiddleware(server, {
             context: async ({ req }) => {
                 const authHeader = req.headers.authorization || '';
@@ -67,7 +70,7 @@ async function startGateway() {
         })
     );
 
-    const PORT = process.env.PORT || 4000;
+    const PORT = process.env.PORT;
     app.listen(PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
         console.log(`GraphQL listo en http://localhost:${PORT}/graphql`);
