@@ -5,19 +5,19 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ParseArrayPipe } from '@nestjs/common';
 import { CartItemDto } from './dto/cart-item.dto';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { FilterProductDto } from './dto/filter-product.dto';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 5 }, { name: 'assetImage', maxCount: 3 },]))
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 5 }, { name: 'assetImage', maxCount: 1 },]))
   async create(@UploadedFiles() files: { galleryImages?: Express.Multer.File[], assetImage?: Express.Multer.File[] }, @Body('data') dataString: string,) {
-    if (!dataString) {
-      throw new BadRequestException('El campo "data"  es requerido');
-    }
-
+    
+    if (!dataString) throw new BadRequestException('El campo "data"  es requerido');
+    
     let createProductDto: CreateProductDto;
     try {
       createProductDto = JSON.parse(dataString);
@@ -72,31 +72,53 @@ export class ProductsController {
   }
 
   // ======================================================
-  //  ESCUCHA DE RABBITMQ (Para el MS_CART en Go)
+  //  ESCUCHA DE RABBITMQ
   // ======================================================
 
-  // 1. Escuchar solicitud de validación de stock
-  // Pattern: "validate_stock"
+  // Validación de stock
   @MessagePattern('validate_stock')
-  async handleValidateStock(@Payload() data: any) {
-    // data llega como el array de productos
+  async handleValidateStock(@Payload() data: CartItemDto[]) {
     console.log('RabbitMQ: Validando stock', data);
     return this.productsService.validateStock(data);
   }
 
-  // 2. Escuchar solicitud de cálculo de carrito
-  // Pattern: "calculate_cart"
+  // Cálculo de carrito
   @MessagePattern('calculate_cart')
-  async handleCalculateCart(@Payload() data: any) {
+  async handleCalculateCart(@Payload() data: CartItemDto[]) {
     console.log('RabbitMQ: Calculando carrito', data);
     return this.productsService.calculateCartDetails(data);
   }
 
-  // 3. Escuchar confirmación de compra (Restar Stock)
-  // Pattern: "decrease_stock"
+  // Confirmación de compra - Restar stock
   @MessagePattern('decrease_stock')
-  async handleDecreaseStock(@Payload() data: any) {
+  async handleDecreaseStock(@Payload() data: CartItemDto[]) {
     console.log('RabbitMQ: Compra confirmada, restando stock', data);
     return this.productsService.decreaseStockBatch(data);
   }
+
+  // Para calcular precio del outfit de maniqui (recibe lista de ids)
+  @MessagePattern('calculate_outfit_price')
+  async handleCalculateOutfit(@Payload() data: string[]) {
+    console.log('RabbitMQ: Calculando outfit:', data);
+     return this.productsService.calculateOutfitPrice(data);
+  }
+
+  // Obtener productos (Con opción de filtrar por categoría)
+  @MessagePattern('find_all_products')
+  async handleFindAll(@Payload() filters: FilterProductDto) {
+    console.log('RabbitMQ: Buscando productos con filtro:', filters.category);
+    return this.productsService.findAll(filters); 
+  }
+
+  // Obtener UN producto (Para el Modal de Detalle)
+  @MessagePattern('find_one_product')
+  async handleFindOne(@Payload() id: string) {
+    console.log('RabbitMQ: Buscando detalle del ID:', id);
+    const product = await this.productsService.findOne(id);
+    if (!product) throw new RpcException({ status: 404, message: 'Producto no encontrado' });
+  
+    return product;
+  }
+
+
 }

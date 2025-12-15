@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { BuilderAsset } from './builder-asset.entity';
 
 @Entity()
 export class Product {
@@ -30,10 +29,6 @@ export class Product {
   @Column('text', { array: true })
   galleryImages: string[];
 
-  // Relación con los assets del builder
-  @OneToMany(() => BuilderAsset, (asset) => asset.product, {
-    cascade: true, // Guarda producto + assets de una sola vez
-    eager: true,   // Trae los assets siempre automáticamente
-  })
-  builderAssets: BuilderAsset[];
+  @Column() 
+  builderImage: string;
 }
