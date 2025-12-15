@@ -12,6 +12,7 @@ import OrderSuccess from './views/OrderSuccess.jsx'
 import OrderFailed from './views/OrderFailed.jsx'
 import Checkout from './views/Checkout.jsx'
 import OrderHistory from './views/OrderHistory.jsx'
+import ProductDetail from './views/ProductDetail.jsx'
 
 function App() {
   const { user, loading } = useUser()
@@ -35,6 +36,7 @@ function App() {
         <Route path="/failed" element={<OrderFailed />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/orderhistory" element={<OrderHistory />} />
+        <Route path="/productdetail/:id" element={<ProductDetail />} />
       </Routes>
     </>
   )

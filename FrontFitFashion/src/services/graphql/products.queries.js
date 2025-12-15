@@ -20,7 +20,7 @@ export const GET_PRODUCTS_QUERY = gql`
       id
       name
       price
-      builderImage
+      galleryImages
       description
     }
   }

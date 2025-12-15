@@ -1,0 +1,241 @@
+/* Contenedor principal de la página */
+.product-detail-page {
+    width: 100%;
+    height: calc(100vh - 80px);
+    background-color: var(--bg-light);
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    padding: 2rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Tarjeta contenedora (efecto flotante blanco) */
+.detail-card {
+    background-color: var(--bg-white, #fff);
+    width: 100%;
+    max-width: 1100px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    display: grid;
+    grid-template-columns: 1.2fr 1fr; /* Izquierda un poco más ancha para fotos */
+    
+    height: fit-content; /* Clave: Se ajusta al contenido */
+    overflow: visible;   /* Para que no corte sombras si las tiene */
+    gap: 0;
+}
+
+/* --- SECCIÓN DE IMÁGENES (IZQUIERDA) --- */
+.image-section {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #fafafa; /* Fondo sutil para las fotos */
+}
+
+.main-image-container {
+    position: relative;
+    width: 100%;
+    height: 500px; /* Altura fija para uniformidad */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.main-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Muestra la foto entera sin cortarla */
+    transition: opacity 0.3s ease;
+}
+
+/* Flechas de navegación */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--color-primary);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.nav-btn:hover {
+    background-color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.nav-btn.prev { left: 10px; }
+.nav-btn.next { right: 10px; }
+
+/* Miniaturas */
+.thumbnails-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 5px;
+    max-width: 100%;
+}
+
+.thumbnail {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    opacity: 0.7;
+}
+
+.thumbnail:hover { opacity: 1; }
+
+.thumbnail.active {
+    border-color: var(--color-accent);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* --- SECCIÓN DE INFO --- */
+.info-section {
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.detail-title {
+    font-size: 2.2rem;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+.price-tag {
+    font-size: 1.8rem;
+    color: var(--color-accent); /* Color naranja/morado */
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.divider {
+    height: 1px;
+    background-color: #eee;
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.detail-description {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    flex-grow: 1;
+}
+
+/* Controles de compra */
+.purchase-actions {
+    margin-top: auto;
+}
+
+.stock-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 1rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.status-dot.green { background-color: #4caf50; }
+.status-dot.red { background-color: #f44336; }
+
+.control-group {
+    display: flex;
+    gap: 15px;
+    height: 50px;
+}
+
+.qty-selector {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.qty-selector button {
+    background: none;
+    border: none;
+    width: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--color-primary);
+    transition: background 0.2s;
+}
+
+.qty-selector button:hover { background-color: #f0f0f0; }
+
+.qty-selector span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    font-weight: bold;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+}
+
+.add-cart-large {
+    flex: 1;
+    background-color: #ff6d00; /* Naranja fuerte estilo e-commerce */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.add-cart-large:hover {
+    background-color: #e65100;
+    box-shadow: 0 4px 12px rgba(255, 109, 0, 0.3);
+}
+
+.add-cart-large:active {
+    transform: scale(0.98);
+}
+
+/* Responsive para celular */
+@media (max-width: 768px) {
+    .detail-card {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+    
+    .main-image-container {
+        height: 350px;
+    }
+    
+    .info-section {
+        padding: 1.5rem;
+    }
+}

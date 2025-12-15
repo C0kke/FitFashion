@@ -49,7 +49,7 @@ const Home = () => {
                     {productos.map((producto) => (
                         <div key={producto.id} className="productCard" onClick={() => navigate(`/productdetail/${producto.id}`)} >
                             <h3 className="productName">{producto.name}</h3>
-                            <img src={producto.builderImage} alt={producto.name} className="productImage" />
+                            <img src={producto.galleryImages[0]} alt={producto.name} className="productImage" />
                             <p className="productPrice"> $ {producto.price ? producto.price.toLocaleString('es-CL') : 'N/A'} </p>
                             <button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); handleAddToCart(producto); }}>
                                 Añadir al carrito
