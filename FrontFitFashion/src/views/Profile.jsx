@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../store/UserContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { authService } from "../services/auth.service";
 import './styles/Profile.css';
-
-const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 const Profile = () => {
     const { user, setUser, loading } = useUser();
@@ -66,8 +64,6 @@ const Profile = () => {
         setMsg({ type: "", text: "" });
         setIsSubmitting(true);
 
-        const token = localStorage.getItem("user");
-
         try {
             const profilePayload = {
                 username: formData.username,
@@ -75,41 +71,37 @@ const Profile = () => {
                 email: formData.email
             };
 
-            const resProfile = await axios.patch(`${BackURL}/auth/users/me`, profilePayload, {
-                headers: { Authorization: `Token ${token}` }
-            });
+            const resProfile = await authService.updateProfile(profilePayload);
 
             if (formData.new_password) {
                 if (!formData.current_password) {
                     throw new Error("Para cambiar la contraseña, debes ingresar tu contraseña actual.");
                 }
 
-                await axios.post(`${BackURL}/auth/users/set_password/`, {
-                    current_password: formData.current_password,
-                    new_password: formData.new_password,
-                    re_new_password: formData.new_password
-                }, {
-                    headers: { Authorization: `Token ${token}` }
-                });
+                await authService.changePassword(
+                    formData.current_password,
+                    formData.new_password
+                );
             }
 
             setMsg({ type: "success", text: "Perfil actualizado correctamente." });
+            
             setUser(prevUser => ({ 
                 ...prevUser, 
-                ...resProfile.data 
+                ...resProfile.data
             }));
+            
             setIsEditing(false);
             setFormData(prev => ({ ...prev, new_password: "", current_password: "" }));
+
         } catch (error) {
             console.error(error);
-            const errorData = error.response?.data;
-            let errorText = error.message;
+            let errorText = error.message || "Error al guardar cambios.";
 
-            if (errorData) {
-                if (errorData.current_password) errorText = "Contraseña actual incorrecta.";
-                else if (errorData.password) errorText = errorData.password[0];
-                else if (errorData.username) errorText = "Ese nombre de usuario ya está en uso.";
-                else errorText = "Error al guardar cambios.";
+            if (errorText.toLowerCase().includes("credentials") || errorText.toLowerCase().includes("password")) {
+                errorText = "Contraseña actual incorrecta o credenciales inválidas.";
+            } else if (errorText.includes("unique")) {
+                errorText = "Ese nombre de usuario o email ya está en uso.";
             }
             
             setMsg({ type: "error", text: errorText });

@@ -1,9 +1,8 @@
 import { createContext, useState, useEffect, useContext } from "react";
-import axios from "axios";
+import { authService } from "../services/auth.service";
 
 export const UserContext = createContext();
 export const useUser = () => useContext(UserContext);
-export const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -15,21 +14,16 @@ export const UserProvider = ({ children }) => {
 
     const checkUserSession = async () => {
         const token = localStorage.getItem("user");
-
         if (token) {
             try {
-                const res = await axios.get(`${BackURL}/auth/users/me`, {
-                    headers: {
-                        Authorization: `Token ${token}`
-                    }
-                });
+                const userData = await authService.getCurrentUser();
 
-                if (res.data.status === 200) {
+                if (userData && userData.status === 200) {
                     setUser({
-                        first_name: res.data.first_name,
-                        username: res.data.username,
-                        email: res.data.email,
-                        role: res.data.role,
+                        first_name: userData.first_name,
+                        username: userData.username,
+                        email: userData.email,
+                        role: userData.role,
                         token: token
                     });
                 } else {

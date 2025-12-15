@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { authService } from "../../services/auth.service";
 import './styles/AdminUsers.css';
-
-const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 const ROLES = {
     ADMIN: 'ADMIN',
@@ -28,12 +26,9 @@ const AdminUsers = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const token = localStorage.getItem("user");
         try {
-            const res = await axios.get(`${BackURL}/auth/users`, {
-                headers: { Authorization: `Token ${token}` }
-            });
-            setUsers(res.data.results || []);
+            const res = await authService.getAllUsers();
+            setUsers(res.data.results || []); 
         } catch (err) {
             setError("Error al cargar usuarios.");
             console.error(err);
@@ -73,12 +68,9 @@ const AdminUsers = () => {
     const handleSaveUser = async (e) => {
         e.preventDefault();
         setSaving(true);
-        const token = localStorage.getItem("user");
-
+        
         try {
-            await axios.patch(`${BackURL}/auth/users/${editingUser.id}`, formData, {
-                headers: { Authorization: `Token ${token}` }
-            });
+            await authService.updateUserAdmin(editingUser.id, formData);
 
             await fetchUsers();
             handleCloseModal();
@@ -141,7 +133,7 @@ const AdminUsers = () => {
                     <div className="modal-content">
                         <h2>Editar Usuario #{editingUser?.id}</h2>
                         <form onSubmit={handleSaveUser}>
-                            <div className="form-group">
+                             <div className="form-group">
                                 <label>Nombre Completo</label>
                                 <input 
                                     type="text" 

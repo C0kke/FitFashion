@@ -42,7 +42,8 @@ class Command(BaseCommand):
             'GET_PROFILE': kafka_services.handle_get_profile,
             'LIST_USERS': kafka_services.handle_list_users,
             'UPDATE_PROFILE': kafka_services.handle_update_profile,
-            'ADMIN_UPDATE_USER': kafka_services.handle_admin_update_user
+            'ADMIN_UPDATE_USER': kafka_services.handle_admin_update_user,
+            'SET_PASSWORD': kafka_services.handle_set_password
         }
 
         for message in consumer:

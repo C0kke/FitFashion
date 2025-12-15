@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import './styles/Login.css';
-import axios from 'axios';
-
-const BackURL = import.meta.env.VITE_GATEWAY_URL;
+import { authService } from '../services/auth.service';
 
 const Login = () => {
     const [isRegister, setIsRegister] = useState(false);
@@ -29,7 +27,7 @@ const Login = () => {
                 if (isRegister) {
                     handleRegister();
                 } else {
-                    hanldeLogin();
+                    handleLogin();
                 }
             }
         }
@@ -40,19 +38,20 @@ const Login = () => {
         }
     }, [isRegister, username, password, name, email, checkpassword]);
 
-    const hanldeLogin = async () => {
+    const handleLogin = async () => {
         setIsLoading(true);
         try {
-            const res = await axios.post(`${BackURL}/auth/token/login`, {
-                username,
-                password
-            });
-            if (res.data.auth_token) {
-                localStorage.setItem("user", res.data.auth_token);
+            const response = await authService.login(username, password);
+            if (response?.token) { 
+                localStorage.setItem("user", response.token);
                 window.location.href = "/";
+            } else {
+                const msg = response?.message || "Credenciales incorrectas o error de conexión";
+                alert(msg);
             }
         } catch(error) {
-            console.log("Error al iniciar sesión", error);
+            console.log("Error crítico al iniciar sesión", error);
+            alert("Error de conexión con el servidor");
         } finally {
             setIsLoading(false);
         }
@@ -61,13 +60,8 @@ const Login = () => {
     const handleRegister = async () => {
         setIsLoading(true);
         try {
-            const res = await axios.post(`${BackURL}/auth/users`, {
-                name,
-                username,
-                email,
-                password,
-            });
-            if (res.data.status === 201) {
+            const res = await authService.register({ username, password, email, name });
+            if (res.status === 201) {
                 setName("");
                 setUsername("");
                 setEmail("");
@@ -92,7 +86,7 @@ const Login = () => {
                         <input type="text" name="username" id="username" value={username} onChange={e => setUsername(e.target.value)}/>
                         <label htmlFor="password">Contraseña:</label>
                         <input type="password" name="password" id="password" value={password} onChange={e => setPassword(e.target.value)}/>
-                        <button onClick={hanldeLogin}>Iniciar Sesión</button>
+                        <button onClick={handleLogin}>Iniciar Sesión</button>
                     </div>
                 </div>
             ) : (

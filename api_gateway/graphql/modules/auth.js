@@ -41,6 +41,12 @@ const typeDefs = `#graphql
       email: String
     ): AuthResponse
 
+    setPassword(
+      current_password: String!, 
+      new_password: String!, 
+      re_new_password: String!
+    ): AuthResponse
+
     updateUserAdmin(
       id: ID!,
       data: String! 
@@ -84,6 +90,20 @@ const resolvers = {
       const { producer, responseEmitter, token } = context;
       if (!token) throw new Error("No autorizado");
       return await sendKafkaRequest(producer, responseEmitter, 'auth-request', 'UPDATE_PROFILE', { data: args }, token);
+    },
+
+    setPassword: async (_, args, context) => {
+      const { producer, responseEmitter, token } = context;
+      if (!token) throw new Error("No autorizado");
+      
+      return await sendKafkaRequest(
+        producer, 
+        responseEmitter, 
+        'auth-request', 
+        'SET_PASSWORD', 
+        args,
+        token
+      );
     },
 
     updateUserAdmin: async (_, { id, data }, context) => {

@@ -181,3 +181,43 @@ def handle_admin_update_user(message_data):
     except Exception as e:
         logger.error(f"Error admin update: {e}")
         return {'status': 500, 'msg': str(e)}
+    
+def handle_set_password(data):
+    try:
+        token_header = data.get('token')
+        
+        if not token_header:
+            return {'status': 401, 'msg': 'No autorizado (Token faltante)'}
+
+        key = token_header.replace('Token ', '').replace('Bearer ', '').strip()
+
+        try:
+            token_obj = Token.objects.get(key=key)
+            user = token_obj.user
+        except Token.DoesNotExist:
+            return {'status': 401, 'msg': 'Token inválido'}
+
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        re_new_password = data.get('re_new_password')
+
+        if not current_password or not new_password:
+             return {'status': 400, 'msg': 'Faltan datos de contraseña'}
+
+        if not user.check_password(current_password):
+            return {'status': 400, 'msg': 'La contraseña actual es incorrecta'}
+
+        if new_password != re_new_password:
+            return {'status': 400, 'msg': 'Las nuevas contraseñas no coinciden'}
+
+        user.set_password(new_password)
+        user.save()
+
+        return {
+            'status': 200,
+            'msg': 'Contraseña actualizada correctamente'
+        }
+
+    except Exception as e:
+        logger.error(f"Error set password: {e}")
+        return {'status': 500, 'msg': str(e)}
