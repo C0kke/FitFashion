@@ -33,6 +33,18 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres:
+    image: postgres:15
+    container_name: products_db
+    environment:
+      POSTGRES_USER: fitfashion      
+      POSTGRES_PASSWORD: postgres1234 
+      POSTGRES_DB: fitfashion 
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data 
+
   # MICROSERVICIOS
 
   api_gateway:
@@ -76,7 +88,11 @@ services:
       - ./ms_products/.env 
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - DB_HOST=host.docker.internal
+      - DB_HOST=postgres         
+      - DB_PORT=5432
+      - DB_USERNAME=fitfashion     
+      - DB_PASSWORD=postgres1234  
+      - DB_DATABASE=fitfashion
     depends_on:
       rabbitmq:
         condition: service_healthy
