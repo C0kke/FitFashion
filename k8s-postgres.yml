@@ -10,6 +10,15 @@ spec:
       storage: 1Gi
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-script
+data:
+  init.sql: |
+    CREATE DATABASE fitfashion_cart_db;
+    GRANT ALL PRIVILEGES ON DATABASE fitfashion_cart_db TO fitfashion;
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: postgres-service
@@ -38,16 +47,21 @@ spec:
         ports:
         - containerPort: 5432
         env:
-        - name: POSTGRES_DB
-          value: "fitfashion_products"
         - name: POSTGRES_USER
-          value: "postgres"
+          value: "fitfashion"
         - name: POSTGRES_PASSWORD
-          value: "postgres"
+          value: "postgres1234"
+        - name: POSTGRES_DB
+          value: "fitfashion"
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
           claimName: postgres-pvc
+      - name: init-script
+        configMap:
+          name: postgres-init-script
