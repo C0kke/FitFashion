@@ -3,12 +3,11 @@ import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { BuilderAsset } from './entities/builder-asset.entity';
-import { CloudinaryModule } from '../cloudinary/cloudinary.module'; // <--- IMPORTANTE
+import { CloudinaryModule } from '../cloudinary/cloudinary.module'; 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, BuilderAsset]),
+    TypeOrmModule.forFeature([Product]),
     CloudinaryModule, 
   ],
   controllers: [ProductsController],

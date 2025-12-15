@@ -1,6 +1,5 @@
 import { IsString, IsNumber, IsArray, ValidateNested, IsOptional, Min, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CreateAssetDto } from './create-asset.dto'; 
 
 export class CreateProductDto {
   @IsString()
@@ -33,8 +32,8 @@ export class CreateProductDto {
   @IsString({ each: true })
   galleryImages: string[];
 
-  @IsArray()
-  @ValidateNested({ each: true }) 
-  @Type(() => CreateAssetDto)
-  builderAssets: CreateAssetDto[];
+  @IsString()
+  @IsOptional()
+  builderImage?: string;
+
 }
