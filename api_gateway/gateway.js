@@ -7,6 +7,7 @@ const schema = require('./graphql/index');
 require('dotenv').config(); 
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
+const { sendKafkaRequest } = require('./utils/kafkaRequest');
 
 const app = express();
 

@@ -52,11 +52,12 @@ const resolvers = {
     Mutation: {
         addItemToCart: async (_, { productId, quantity }, context) => {
             const { user_id, rabbitChannel, responseEmitter } = context; 
+            console.log("Agregar al carrito - user_id:", user_id, "productId:", productId, "quantity:", quantity);
             
             if (!user_id) throw new Error("No autorizado. ID de usuario faltante.");
 
             const payload = {
-                pattern: 'add_item_to_cart',
+                pattern: 'adjust_item_quantity',
                 data: { user_id: user_id, product_id: productId, quantity: quantity } 
             };
             

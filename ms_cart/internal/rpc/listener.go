@@ -130,19 +130,30 @@ func (l *Listener) processRequest(ctx context.Context, pattern string, data json
     var userID string 
     var temp map[string]interface{}
     if err := json.Unmarshal(data, &temp); err == nil {
-        if id, ok := temp["userID"].(string); ok {
-            userID = id
+        if id, ok := temp["user_id"]; ok {
+            switch v := id.(type) {
+        case string:
+            userID = v
+        case float64:
+            userID = strconv.FormatFloat(v, 'f', 0, 64)
+        default:
+            log.Printf("[DEBUG] user_id no es string ni float64: %T", v)
         }
     }
+    }
+
+	log.Printf("[DEBUG] Procesando request. Pattern: %s, UserID: %s", pattern, userID)
     
     switch pattern {
     case "adjust_item_quantity":
-        var payload struct {
-            ProductID string `json:"productID"`
-            QuantityChange int `json:"quantityChange"`
+		var payload struct {
+            ProductID string `json:"product_id"`
+            QuantityChange int `json:"quantity"`
         }
+		log.Printf("[DEBUG] adjust_item_quantity - ProductID: %s, QuantityChange: %d", payload.ProductID, payload.QuantityChange)
         if err := json.Unmarshal(data, &payload); err != nil {
-            return nil, fmt.Errorf("datos de entrada inválidos para adjust_item_quantity")
+            log.Printf("Deserialización de adjust_item_quantity fallida: %v", err)
+			return nil, fmt.Errorf("datos de entrada inválidos para adjust_item_quantity")
         }
         return l.Service.UpdateItemQuantity(ctx, userID, payload.ProductID, payload.QuantityChange)
 

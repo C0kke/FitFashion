@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"log"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 	"github.com/C0kke/FitFashion/ms_cart/internal/product"
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
@@ -25,6 +26,7 @@ func NewCartService(repo repository.CartRepository, productClient product.Client
 func (s *CartService) UpdateItemQuantity(ctx context.Context, userID string, productID string, quantityChange int) (*models.Cart, error) {
 	
 	cart, err := s.Repo.FindByUserID(ctx, userID)
+	log.Printf("[DEBUG-SVC] Carrito encontrado para %s. Items: %d", userID, len(cart.Items))
 	if err != nil {
 		return nil, fmt.Errorf("error al buscar carrito para actualización: %w", err)
 	}
@@ -40,13 +42,13 @@ func (s *CartService) UpdateItemQuantity(ctx context.Context, userID string, pro
 			break
 		}
 	}
-    
+    log.Printf("[DEBUG-SVC] currentQuantity: %d, quantityChange: %d", currentQuantity, quantityChange)
 	targetQuantity := currentQuantity + quantityChange
 	
 	if !itemExists && quantityChange > 0 {
 		targetQuantity = quantityChange
 	}
-
+	log.Printf("[DEBUG-SVC] targetQuantity: %d, itemExists: %t", targetQuantity, itemExists)
 	if targetQuantity <= 0 && itemExists == false {
 		return cart, fmt.Errorf("el producto %s no existe en el carrito para esta operación", productID)
 	}
@@ -59,8 +61,10 @@ func (s *CartService) UpdateItemQuantity(ctx context.Context, userID string, pro
 			},
 		}
 
+		log.Printf("[DEBUG-SVC] Llamando a ms_products.ValidateStock para Producto: %s, Cantidad: %d", productID, targetQuantity)
 		validationResult, rpcErr := s.ProductClient.ValidateStock(ctx, itemsToValidate)
 		if rpcErr != nil {
+			log.Printf("[ERROR-CRITICO] FALLO RPC (ms_products): %v", rpcErr)
 			return nil, fmt.Errorf("fallo RPC al validar stock con ms_products: %w", rpcErr)
 		}
 
@@ -104,6 +108,7 @@ func (s *CartService) UpdateItemQuantity(ctx context.Context, userID string, pro
 		return nil, fmt.Errorf("error al guardar carrito después de actualización de cantidad: %w", err)
 	}
 
+	log.Printf("[DEBUG-SVC] Operación completada. Guardando Carrito con ID: %s", userID) // Confirma que cart.ID tiene valor
 	return cart, nil
 }
 

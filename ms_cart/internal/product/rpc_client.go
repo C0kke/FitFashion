@@ -5,6 +5,7 @@ import (
     "encoding/json"
     "fmt"
     "time"
+    "log"
 
     "github.com/streadway/amqp"
 )
@@ -117,6 +118,7 @@ func (c *ProductClient) CallRPC(ctx context.Context, pattern string, data interf
 func (c *ProductClient) ValidateStock(ctx context.Context, items []ProductInput) (*StockValidationOutput, error) {
     var output StockValidationOutput
     err := c.CallRPC(ctx, "validate_stock", items, &output) 
+    log.Printf("[DEBUG-RPC] CalculateCart output, items: %+v, output: %+v", items, output)
     if err != nil {
         return nil, err
     }
