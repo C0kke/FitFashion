@@ -4,16 +4,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database" 
 	"github.com/joho/godotenv"
-	"github.com/C0kke/FitFashion/ms_cart/api/handlers"
-	"github.com/C0kke/FitFashion/ms_cart/internal/product"
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
 	"github.com/C0kke/FitFashion/ms_cart/internal/messaging"
-	"github.com/C0kke/FitFashion/ms_cart/internal/user"
-	"github.com/C0kke/FitFashion/ms_cart/pkg/router"
+	"github.com/C0kke/FitFashion/ms_cart/internal/payments"
+	"github.com/C0kke/FitFashion/ms_cart/internal/rpc"
+	"github.com/C0kke/FitFashion/ms_cart/internal/product"
 	mqconn "github.com/C0kke/FitFashion/ms_cart/pkg/messaging"
 )
 
@@ -45,39 +43,30 @@ func main() {
 	}
 
 	productClientRPC := product.NewProductClient(rabbitConn)
-	userClient := user.NewRpcClient(rabbitConn)
 
 	mpAccessToken := os.Getenv("MP_ACCESS_TOKEN")
     if mpAccessToken == "" {
         log.Fatal("MP_ACCESS_TOKEN no encontrado en .env")
     }
 
-    paymentClient, err := service.NewMercadoPagoClient(mpAccessToken)
+    paymentClient, err := payments.NewMercadoPagoClient(mpAccessToken)
     if err != nil {
         log.Fatalf("Error al inicializar Mercado Pago Client: %v", err)
     }
 
 	cartRepo := repository.NewRedisCartRepository()
 	orderRepo := repository.NewPostgresOrderRepository()
-
     orderPublisher := messaging.NewOrderPublisher(rabbitConn) 
 
 	cartService := service.NewCartService(cartRepo, productClientRPC)
-	orderService := service.NewOrderService(orderRepo, cartRepo, userClient, productClientRPC, orderPublisher, paymentClient)
+	orderService := service.NewOrderService(orderRepo, cartRepo, productClientRPC, orderPublisher, paymentClient)
 
-	cartHandler := handlers.NewCartHandler(cartService)
-	orderHandler := handlers.NewOrderHandler(orderService)
+	rpcQueueName := os.Getenv("RPC_QUEUE_NAME")
+	listener, err := rpc.NewRpcListener(rabbitConn, rpcQueueName, cartService, orderService)
+    if err != nil {
+        log.Fatalf("Fallo al configurar RPC Listener: %v", err)
+    }
 
-	routerConfig := router.RouterConfig{
-		CartHandler: cartHandler,
-		OrderHandler: orderHandler,
-	}
-	r := router.SetupRouter(routerConfig)
-    
-    r.GET("/health", func(c *gin.Context) {
-        c.JSON(200, gin.H{"status": "UP", "service": "ms_cart_orders"})
-    })
-
-	log.Printf("Servidor iniciado en http://localhost:%s", port)
-	log.Fatal(r.Run(":" + port)) 
+	log.Println("MS_CART iniciado y escuchando peticiones RPC...")
+    listener.StartConsuming()
 }
