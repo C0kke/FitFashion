@@ -25,11 +25,11 @@ const Home = () => {
     }
 
     if (loading) return (
-        <div className="main-container">
-            <div className="content">
-                <p>Cargando productos...</p>
-            </div>
-        </div>
+        <div className="main-container"><div className="content"><p>Cargando productos...</p></div></div>
+    );
+
+    if (error) return (
+        <div className="main-container"><div className="content"><p>Error cargando productos: {error.message}</p></div></div>
     );
 
     const productosGateway = data?.products || [];
@@ -40,7 +40,8 @@ const Home = () => {
                 <span>Nuevos productos</span>
                 <div className="productsSection">
                     {productosGateway.map((producto) => (
-                        <div key={producto.id} className="productCard" onClick={() => window.location.href = `/product/${producto.id}`} >
+                        // CORREGIDO: La ruta ahora coincide con App.jsx (/productdetail/)
+                        <div key={producto.id} className="productCard" onClick={() => window.location.href = `/productdetail/${producto.id}`} >
                             <h3 className="productName">{producto.name}</h3>
                             <img src={producto.builderImage} alt={producto.name} className="productImage" />
                             <p className="productPrice"> $ {producto.price ? producto.price.toLocaleString('es-CL') : 'N/A'} </p>
