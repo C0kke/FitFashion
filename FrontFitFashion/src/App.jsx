@@ -11,6 +11,7 @@ import { useUser } from './store/UserContext.jsx'
 import OrderSuccess from './views/OrderSuccess.jsx'
 import OrderFailed from './views/OrderFailed.jsx'
 import Checkout from './views/Checkout.jsx'
+import OrderHistory from './views/OrderHistory.jsx'
 
 function App() {
   const { user, loading } = useUser()
@@ -33,6 +34,7 @@ function App() {
         <Route path="/success" element={<OrderSuccess />} />
         <Route path="/failed" element={<OrderFailed />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orderhistory" element={<OrderHistory />} />
       </Routes>
     </>
   )

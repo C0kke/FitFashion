@@ -1,63 +1,27 @@
-const amqp = require('amqplib');
+const rabbitRequest = (channel, responseEmitter, queueName, payload) => {
+  return new Promise((resolve, reject) => {
+    
+    if (!channel) return reject(new Error("El canal de RabbitMQ no está listo"));
 
-// Enviar mensajes y esperar respuesta de RabbitMQ
-const rabbitRequest = async (queueName, payload) => {
-  const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672';
-  
-  try {
-    // 1. Conectar a RabbitMQ
-    const connection = await amqp.connect(url);
-    const channel = await connection.createChannel();
+    const correlationId = Math.random().toString() + Date.now().toString();
 
-    // 2. Crear una cola temporal exclusiva para recibir respuesta del mensaje
-    const q = await channel.assertQueue('', { exclusive: true });
+    const timeout = setTimeout(() => {
+      responseEmitter.removeAllListeners(correlationId);
+      reject(new Error('Tiempo de espera agotado (RabbitMQ Timeout)'));
+    }, 10000);
 
-    // Generamos un ID único para saber que la respuesta es para esta solicitud
-    const correlationId = generateUuid();
-
-    return new Promise((resolve, reject) => {
-      // Timeout de seguridad: Si en 5 segundos no responden, cancelamos
-      const timeout = setTimeout(() => {
-        channel.close();
-        connection.close();
-        reject(new Error('Tiempo de espera agotado para RabbitMQ'));
-      }, 5000);
-
-      // 3. Escuchar en la cola temporal esperando la respuesta
-      channel.consume(q.queue, (msg) => {
-        if (msg.properties.correlationId === correlationId) {
-          // LLegó la respuesta
-          clearTimeout(timeout);
-          const content = JSON.parse(msg.content.toString());
-          
-          // Cerramos conexión y canal
-          channel.close();
-          connection.close();
-          
-          // Resolvemos la promesa con los datos
-          resolve(content);
-        }
-      }, { noAck: true });
-
-      // 4. Enviar el mensaje a la cola del Microservicio (ej: 'products_queue')
-      // IMPORTANTE: NestJS espera el formato { pattern: '...', data: ... }
-      const messageBuffer = Buffer.from(JSON.stringify(payload));
-
-      channel.sendToQueue(queueName, messageBuffer, {
-        correlationId: correlationId,
-        replyTo: q.queue
-      });
+    responseEmitter.once(correlationId, (data) => {
+      clearTimeout(timeout);
+      resolve(data);
     });
 
-  } catch (error) {
-    console.error('Error en rabbitRequest:', error);
-    throw new Error('Error conectando con el microservicio');
-  }
-};
+    const messageBuffer = Buffer.from(JSON.stringify(payload));
 
-// Función auxiliar para generar IDs únicos
-function generateUuid() {
-  return Math.random().toString() + Math.random().toString() + Math.random().toString();
-}
+    channel.sendToQueue(queueName, messageBuffer, {
+      correlationId: correlationId,
+      replyTo: 'gateway_replies_v2' 
+    });
+  });
+};
 
 module.exports = rabbitRequest;
