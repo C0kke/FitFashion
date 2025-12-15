@@ -17,7 +17,8 @@ const Profile = () => {
         first_name: "",
         email: "",
         current_password: "",
-        new_password: ""
+        new_password: "",
+        addresses: []
     });
 
     useEffect(() => {
@@ -27,7 +28,8 @@ const Profile = () => {
                 first_name: user.first_name || "",
                 email: user.email || "",
                 new_password: "",
-                current_password: ""
+                current_password: "",
+                addresses: Array.isArray(user.addresses) ? user.addresses : []
             });
         }
     }, [user]);
@@ -56,7 +58,15 @@ const Profile = () => {
     };
 
     const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        if (name === "addresses") {
+            setFormData({
+                ...formData,
+                addresses: value.split('\n').map(d => d.trim()).filter(Boolean)
+            });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleSaveChanges = async (e) => {
@@ -68,7 +78,8 @@ const Profile = () => {
             const profilePayload = {
                 username: formData.username,
                 first_name: formData.first_name,
-                email: formData.email
+                email: formData.email,
+                addresses: formData.addresses
             };
 
             const resProfile = await authService.updateProfile(profilePayload);
@@ -171,6 +182,23 @@ const Profile = () => {
                         />
                     </div>
 
+                    <div className="detail-item">
+                        <label>addresses (una por línea)</label>
+                        {isEditing ? (
+                            <textarea
+                                name="addresses"
+                                value={formData.addresses.join('\n')}
+                                onChange={handleInputChange}
+                                rows={3}
+                                className="profile-input editing"
+                                placeholder="Agrega una dirección por línea"
+                            />
+                        ) : (
+                            (formData.addresses && formData.addresses.length > 0)
+                                ? <ul style={{margin:0, paddingLeft:16}}>{formData.addresses.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                                : <span style={{color:'#aaa'}}>Sin addresses</span>
+                        )}
+                    </div>
                     {isEditing && (
                         <div className="password-section">
                             <div className="detail-item">

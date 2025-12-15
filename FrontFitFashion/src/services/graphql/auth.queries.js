@@ -12,6 +12,7 @@ export const LOGIN_MUTATION = gql`
         email
         first_name
         role
+        addresses
       }
     }
   }
@@ -36,6 +37,7 @@ export const ME_QUERY = gql`
         first_name
         email
         role
+        addresses
       }
     }
   }
@@ -50,6 +52,7 @@ export const UPDATE_PROFILE_MUTATION = gql`
         first_name
         email
         username
+        addresses
       }
     }
   }
@@ -65,6 +68,7 @@ export const ADMIN_GET_USERS = gql`
         first_name
         role
         date_joined
+        addresses
       }
     }
   }

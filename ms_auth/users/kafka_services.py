@@ -24,7 +24,8 @@ def serialize_user(user):
         'email': user.email,
         'first_name': user.first_name,
         'role': getattr(user, 'role', 'CLIENTE'),
-        'date_joined': str(user.date_joined) if hasattr(user, 'date_joined') else None 
+        'date_joined': str(user.date_joined) if hasattr(user, 'date_joined') else None,
+        'addresses': user.addresses if hasattr(user, 'addresses') else []
     }
 
 def handle_login(data):
@@ -128,6 +129,8 @@ def handle_update_profile(message_data):
         if 'first_name' in payload: user.first_name = payload['first_name']
         if 'email' in payload: user.email = payload['email']
         if 'username' in payload: user.username = payload['username']
+        if 'addresses' in payload:
+            user.addresses = payload['addresses']
 
         try:
             user.save()
@@ -167,6 +170,8 @@ def handle_admin_update_user(message_data):
         if 'email' in payload: target_user.email = payload['email']
         if 'username' in payload: target_user.username = payload['username']
         if 'role' in payload: target_user.role = payload['role']
+        if 'addresses' in payload:
+            target_user.addresses = payload['addresses']
         if 'password' in payload and payload['password']:
             target_user.set_password(payload['password'])
 

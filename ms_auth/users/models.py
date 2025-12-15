@@ -10,8 +10,8 @@ class CustomUser(AbstractUser):
     
     email = models.EmailField(unique=True) 
     role = models.CharField(max_length=15, choices=ROLES, default='CLIENTE')
-    """ TODO AGREGAR DIRECCIONES """
-    
+    addresses = models.JSONField(default=list, blank=True)
+
     USERNAME_FIELD = 'username' 
     REQUIRED_FIELDS = ['email', 'first_name'] 
     

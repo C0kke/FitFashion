@@ -20,7 +20,8 @@ const AdminUsers = () => {
         first_name: "",
         email: "",
         password: "",
-        role: ROLES.CLIENTE
+        role: ROLES.CLIENTE,
+        addresses: []
     });
     const [saving, setSaving] = useState(false);
 
@@ -48,7 +49,8 @@ const AdminUsers = () => {
             first_name: user.first_name || "",
             email: user.email,
             password: "",
-            role: user.role || ROLES.CLIENTE
+            role: user.role || ROLES.CLIENTE,
+            addresses: Array.isArray(user.addresses) ? user.addresses : []
         });
         setIsModalOpen(true);
     };
@@ -59,10 +61,18 @@ const AdminUsers = () => {
     };
 
     const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        if (name === "addresses") {
+            setFormData({
+                ...formData,
+                addresses: value.split('\n').map(d => d.trim()).filter(Boolean)
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
     };
 
     const handleSaveUser = async (e) => {
@@ -102,6 +112,7 @@ const AdminUsers = () => {
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Rol</th>
+                            <th>addresses</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -116,6 +127,11 @@ const AdminUsers = () => {
                                     <span className={`role-tag ${u.role ? u.role.toLowerCase() : 'cliente'}`}>
                                         {u.role || ROLES.CLIENTE}
                                     </span>
+                                </td>
+                                <td>
+                                    {(u.addresses && u.addresses.length > 0)
+                                        ? <ul style={{margin:0, paddingLeft:16}}>{u.addresses.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                                        : <span style={{color:'#aaa'}}>Sin addresses</span>}
                                 </td>
                                 <td>
                                     <button className="btn-edit" onClick={() => handleEditClick(u)}>
@@ -192,6 +208,16 @@ const AdminUsers = () => {
                                 </select>
                             </div>
 
+                            <div className="form-group">
+                                <label>addresses (una por línea)</label>
+                                <textarea
+                                    name="addresses"
+                                    value={formData.addresses.join('\n')}
+                                    onChange={handleInputChange}
+                                    rows={3}
+                                    placeholder="Agrega una dirección por línea"
+                                />
+                            </div>
                             <div className="modal-actions">
                                 <button type="button" className="btn-cancel" onClick={handleCloseModal}>
                                     Cancelar

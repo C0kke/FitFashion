@@ -9,6 +9,7 @@ const typeDefs = `#graphql
     last_name: String
     role: String
     date_joined: String
+    addresses: [String]
   }
 
   type AuthResponse {

@@ -56,11 +56,12 @@ export const authService = {
 
     updateProfile: async (profileData) => {
         const { data } = await client.mutate({
-        mutation: UPDATE_PROFILE_MUTATION,
-        variables: { 
-            first_name: profileData.first_name,
-            email: profileData.email
-        }
+            mutation: UPDATE_PROFILE_MUTATION,
+            variables: { 
+                first_name: profileData.first_name,
+                email: profileData.email,
+                addresses: profileData.addresses
+            }
         });
         return { data: data.updateProfile.user };
     },
