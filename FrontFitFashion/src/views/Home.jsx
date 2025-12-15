@@ -1,27 +1,36 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useCart } from '../store/CartContext';
-import { useQuery, gql } from '@apollo/client'; 
+import { productService } from '../services/products.service';
 import './styles/Home.css';
 
-const GET_PRODUCTS_QUERY = gql`
-  query Products {
-    products {
-      id
-      name
-      price
-      builderImage
-      description
-    }
-  }
-`;
-
 const Home = () => {
-    const { addItem, openCart } = useCart();
-    const { loading, error, data } = useQuery(GET_PRODUCTS_QUERY);
+    const { addItem } = useCart();
+    const navigate = useNavigate();
+    
+    const [productos, setProductos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setLoading(true);
+            try {
+                const data = await productService.getAllProducts();
+                setProductos(data || []);
+            } catch (err) {
+                setError(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
+    }, []);
 
     const handleAddToCart = (producto) => {
         addItem(producto);
-        /* openCart(); */
     }
 
     if (loading) return (
@@ -40,8 +49,7 @@ const Home = () => {
                 <span>Nuevos productos</span>
                 <div className="productsSection">
                     {productosGateway.map((producto) => (
-                        // CORREGIDO: La ruta ahora coincide con App.jsx (/productdetail/)
-                        <div key={producto.id} className="productCard" onClick={() => window.location.href = `/productdetail/${producto.id}`} >
+                        <div key={producto.id} className="productCard" onClick={() => navigate(`/productdetail/${producto.id}`)} >
                             <h3 className="productName">{producto.name}</h3>
                             <img src={producto.builderImage} alt={producto.name} className="productImage" />
                             <p className="productPrice"> $ {producto.price ? producto.price.toLocaleString('es-CL') : 'N/A'} </p>
