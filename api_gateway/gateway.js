@@ -1,5 +1,6 @@
 const express = require('express');
 const { Kafka } = require('kafkajs');
+const amqp = require('amqplib'); 
 const EventEmitter = require('events');
 const cors = require('cors');
 const schema = require('./graphql/index');
@@ -11,34 +12,60 @@ const app = express();
 
 const responseEmitter = new EventEmitter();
 
+// --- KAFKA ---
 const kafka = new Kafka({ 
     clientId: 'api-gateway', 
     brokers: [process.env.KAFKA_BROKER], 
     retry: { retries: 5 }
 });
-
 const producer = kafka.producer();
 const consumer = kafka.consumer({ groupId: 'gateway-listener-group' });
 
+let rabbitChannel = null;
+
 async function startGateway() {
+    // 1. Iniciar Kafka
     await producer.connect();
     await consumer.connect();
-    
     await consumer.subscribe({ topic: 'auth-response', fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ message }) => {
             try {
                 const value = JSON.parse(message.value.toString());
-                if (value.correlationId) {
-                    responseEmitter.emit(value.correlationId, value);
-                }
-            } catch (err) {
-                console.error("Error parseando mensaje en Gateway:", err);
-            }
+                if (value.correlationId) responseEmitter.emit(value.correlationId, value);
+            } catch (err) { console.error("Error Kafka:", err); }
         },
     });
 
+    // 2. Iniciar RabbitMQ
+    try {
+        const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672';
+        const connection = await amqp.connect(rabbitUrl);
+        rabbitChannel = await connection.createChannel();
+        
+        const replyQueue = 'gateway_replies_v2';
+        await rabbitChannel.assertQueue(replyQueue, { durable: true });
+
+        console.log(`🐰 Gateway escuchando en RabbitMQ (${replyQueue})`);
+
+        // Listener de RabbitMQ
+        rabbitChannel.consume(replyQueue, (msg) => {
+            if (msg) {
+                console.log(`[RABBIT] Llegó mensaje. ID: ${msg.properties.correlationId}`);
+                if (msg.properties.correlationId) {
+                    const content = JSON.parse(msg.content.toString());
+                    const data = content.response !== undefined ? content.response : content;
+                    responseEmitter.emit(msg.properties.correlationId, data);
+                }
+            }
+        }, { noAck: true });
+
+    } catch (error) {
+        console.error("Error iniciando RabbitMQ en Gateway:", error);
+    }
+
+    // 3. Iniciar Apollo
     const server = new ApolloServer({ schema });
     await server.start();
 
@@ -64,7 +91,8 @@ async function startGateway() {
                 return {
                     producer,
                     responseEmitter,
-                    token: djangoToken 
+                    token: djangoToken,
+                    rabbitChannel 
                 };
             },
         })
