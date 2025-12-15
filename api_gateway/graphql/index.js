@@ -2,7 +2,7 @@ const { makeExecutableSchema } = require('@graphql-tools/schema');
 
 const authModule = require('./modules/auth');
 // const cartModule = require('./modules/cart');
-// const productModule = require('./modules/product');
+const productModule = require('./modules/products');
 
 const rootTypeDefs = `#graphql
   type Query {
@@ -18,12 +18,12 @@ const schema = makeExecutableSchema({
     rootTypeDefs, 
     authModule.typeDefs,
     // cartModule.typeDefs 
-    // productModule.typeDefs
+    productModule.typeDefs
   ],
   resolvers: [
     authModule.resolvers,
     // cartModule.resolvers
-    // productModule.resolvers
+    productModule.resolvers
   ]
 });
 
