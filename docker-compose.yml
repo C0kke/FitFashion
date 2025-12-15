@@ -39,20 +39,20 @@ services:
       timeout: 5s
       retries: 5
   
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    container_name: redis-cache
-    command: redis-server --appendonly yes
-    healthcheck: 
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - redis_data:/data
+  # redis:
+  #   image: redis:7-alpine
+  #   restart: always
+  #   ports:
+  #     - "6379:6379"
+  #   container_name: redis-cache
+  #   command: redis-server --appendonly yes
+  #   healthcheck: 
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   volumes:
+  #     - redis_data:/data
 
   postgres:
     image: postgres:15
@@ -108,25 +108,25 @@ services:
     depends_on:
       - api_gateway
   
-  ms_cart:
-    build: ./ms_cart 
-    restart: always
-    ports:
-      - "8081:8080"
-    environment:
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DB_HOST: postgres  
-      DB_PORT: 5432
-      DB_USER: fitfashion
-      DB_PASSWORD: postgres1234
-      DB_NAME: fitfashion_cart_db  
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_started
+  # ms_cart:
+  #   build: ./ms_cart 
+  #   restart: always
+  #   ports:
+  #     - "8081:8080"
+  #   environment:
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     DB_HOST: postgres  
+  #     DB_PORT: 5432
+  #     DB_USER: fitfashion
+  #     DB_PASSWORD: postgres1234
+  #     DB_NAME: fitfashion_cart_db  
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     postgres:
+  #       condition: service_started
 
   ms-products:
     build: ./ms_products  
@@ -144,3 +144,5 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+volumes:
+  redis_data:
