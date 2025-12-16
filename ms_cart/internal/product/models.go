@@ -20,7 +20,7 @@ type CartItemSnapshot struct {
 
 type CartCalculationOutput struct {
     UserID     string             `json:"user_id"`
-    TotalPrice int                `json:"total"`
+    TotalPrice int                `json:"totalPrice"`
     Items      []CartItemSnapshot `json:"items"`
 }
 

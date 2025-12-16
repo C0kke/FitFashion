@@ -2,24 +2,24 @@ const rabbitRequest = require('../../utils/rabbitRequest');
 
 const typeDefs = `#graphql
     type CartItem {
-        id: ID! 
         product_id: ID!
         quantity: Int!
-        price: Int! 
-        name: String
+        nameSnapshot: String!
+        unitPrice: Int!
+        subtotal: Int!
     }
 
     type Cart {
         user_id: ID!
         items: [CartItem]!
-        total: Int!
+        totalPrice: Int! 
     }
 
     type OrderItem {
-        order_id: ID!
-        product_id: ID!
-        name_snapshot: String!
-        unit_price: Int!
+        orderID: ID!
+        productID: ID!
+        nameSnapshot: String!
+        unitPrice: Int!
         quantity: Int!
     }
 
@@ -28,7 +28,7 @@ const typeDefs = `#graphql
         total: Int!
         status: String!
         shipping_address: String!
-        items: [OrderItem]!
+        order_items: [OrderItem]!
     }
 
     type CheckoutResponse {
@@ -137,6 +137,22 @@ const resolvers = {
             };
             return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
         },
+    },
+
+    Order: {
+        id: (parent) => parent.ID,
+        total: (parent) => parent.Total,    
+        status: (parent) => parent.Status,
+        shipping_address: (parent) => parent.ShippingAddress,
+        order_items: (parent) => parent.OrderItems,
+    },
+
+    OrderItem: {
+        orderID: (parent) => parent.OrderID,
+        productID: (parent) => parent.ProductID,
+        nameSnapshot: (parent) => parent.NameSnapshot,
+        unitPrice: (parent) => parent.UnitPrice,
+        quantity: (parent) => parent.Quantity,
     }
 };
 

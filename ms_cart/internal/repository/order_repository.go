@@ -77,10 +77,20 @@ func (r *PostgresOrderRepository) UpdateStatus(ctx context.Context, orderID uint
 }
 
 func (r *PostgresOrderRepository) FindAll(ctx context.Context) ([]models.Order, error) {
-    var orders []models.Order
-    result := r.DB.WithContext(ctx).Find(&orders) 
-    if result.Error != nil {
-        return nil, result.Error
-    }
-    return orders, nil
+	var orders []models.Order
+	result := r.DB.WithContext(ctx).
+		Preload("OrderItems").
+		Find(&orders) 
+		
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	for i := range orders {
+		if orders[i].OrderItems == nil {
+			orders[i].OrderItems = []models.OrderItem{} 
+		}
+	}
+
+	return orders, nil
 }
