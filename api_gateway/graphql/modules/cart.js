@@ -10,10 +10,25 @@ const typeDefs = `#graphql
     }
 
     type Cart {
-        id: ID!
         user_id: ID!
         items: [CartItem]!
         total: Int!
+    }
+
+    type OrderItem {
+        order_id: ID!
+        product_id: ID!
+        name_snapshot: String!
+        unit_price: Int!
+        quantity: Int!
+    }
+
+    type Order {
+        id: ID!
+        total: Int!
+        status: String!
+        shipping_address: String!
+        items: [OrderItem]!
     }
 
     type CheckoutResponse {
@@ -24,6 +39,8 @@ const typeDefs = `#graphql
 
     extend type Query {
         getCart: Cart
+        getUserOrders: [Order!]!
+        getAllOrders: [Order!]!
     }
 
     extend type Mutation {
@@ -43,6 +60,30 @@ const resolvers = {
             const payload = {
                 pattern: 'get_cart_by_user',
                 data: { user_id: user_id } 
+            };
+            
+            return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
+        },
+
+        getUserOrders: async (_, __, context) => {
+            const { user_id, rabbitChannel, responseEmitter } = context; 
+            
+            if (!user_id) throw new Error("No autorizado. ID de usuario faltante.");
+            
+            const payload = {
+                pattern: 'get_user_orders', 
+                data: { user_id: user_id } 
+            };
+
+            return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
+        },
+
+        getAllOrders: async (_, __, context) => {
+            const { rabbitChannel, responseEmitter } = context; 
+            
+            const payload = {
+                pattern: 'get_all_orders', 
+                data: {} 
             };
             
             return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
@@ -80,7 +121,22 @@ const resolvers = {
             };
             
             return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
-        }
+        },
+
+        removeItemFromCart: async (_, { productId }, context) => {
+            const { user_id, rabbitChannel, responseEmitter } = context; 
+        
+            if (!user_id) throw new Error("No autorizado. ID de usuario faltante.");
+
+            const payload = {
+                pattern: 'remove_item_from_cart',
+                data: { 
+                    user_id: user_id, 
+                    product_id: productId
+                } 
+            };
+            return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
+        },
     }
 };
 

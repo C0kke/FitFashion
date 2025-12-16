@@ -157,7 +157,7 @@ func (l *Listener) processRequest(ctx context.Context, pattern string, data json
         }
         return l.Service.UpdateItemQuantity(ctx, userID, payload.ProductID, payload.QuantityChange)
 
-    case "get_cart":
+    case "get_cart_by_user":
         return l.Service.GetCartWithPrices(ctx, userID)
 
     case "process_checkout":
@@ -178,7 +178,19 @@ func (l *Listener) processRequest(ctx context.Context, pattern string, data json
 		userIDUint := uint(userIDUint64)
 
 		return l.OrderService.GetUserOrders(ctx, userIDUint)
-        
+    
+	case "remove_item_from_cart":
+        var payload struct {
+            ProductID string `json:"product_id"`
+        }
+        if err := json.Unmarshal(data, &payload); err != nil {
+            return nil, fmt.Errorf("datos de entrada inválidos para remove_item_from_cart")
+        }
+        return l.Service.RemoveItemFromCart(ctx, userID, payload.ProductID)
+
+	case "get_all_orders":
+        return l.OrderService.GetAllOrders(ctx)
+
     default:
         return nil, fmt.Errorf("patrón RPC no reconocido: %s", pattern)
     }

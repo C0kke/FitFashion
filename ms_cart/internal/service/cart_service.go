@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"log"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
@@ -121,11 +122,17 @@ func (s *CartService) GetCartWithPrices(ctx context.Context, userID string) (*pr
 	if err != nil {
 		return nil, fmt.Errorf("error al buscar carrito: %w", err)
 	}
-	
+	log.Printf("[DEBUG-SVC] Carrito encontrado para %s. Items: %d", userID, len(cart.Items))
 	if len(cart.Items) == 0 {
-		return &product.CartCalculationOutput{TotalPrice: 0, Items: []product.CartItemSnapshot{}}, nil
-	}
-
+		emptyCartOutput := &product.CartCalculationOutput{
+            UserID: strconv.Itoa(cart.UserID),
+            TotalPrice:  0,
+            Items: []product.CartItemSnapshot{},
+        }
+        log.Printf("[DEBUG-SVC] Devolviendo carrito vacío con ID: %s", userID)
+        return emptyCartOutput, nil 
+    }
+	log.Printf("[DEBUG-SVC] Carrito tiene %d items. Preparando inputs para ms_products", len(cart.Items))
 	productInputs := make([]product.ProductInput, len(cart.Items))
 	for i, item := range cart.Items {
 		productInputs[i] = product.ProductInput{
@@ -133,12 +140,13 @@ func (s *CartService) GetCartWithPrices(ctx context.Context, userID string) (*pr
 			Quantity:  item.Quantity,
 		}
 	}
-
+	log.Printf("[DEBUG-SVC] Llamando a ms_products.CalculateCart para %d items", len(productInputs))
 	calculation, err := s.ProductClient.CalculateCart(ctx, productInputs)
 	if err != nil {
 		return nil, fmt.Errorf("fallo RPC al calcular carrito con ms_products: %w", err)
 	}
-
+	calculation.UserID = strconv.Itoa(cart.UserID)
+	log.Printf("[DEBUG-SVC] Cálculo completado. TotalPrice: %d para UserID: %s", calculation.TotalPrice, userID)
 	return calculation, nil
 }
 

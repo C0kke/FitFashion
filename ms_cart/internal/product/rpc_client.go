@@ -6,7 +6,7 @@ import (
     "fmt"
     "time"
     "log"
-
+    "errors"
     "github.com/streadway/amqp"
 )
 
@@ -48,6 +48,7 @@ func (c *ProductClient) CallRPC(ctx context.Context, pattern string, data interf
         return fmt.Errorf("fallo al abrir canal AMQP: %w", err)
     }
     defer ch.Close()
+
 
     replyQueue, err := ch.QueueDeclare(
         "",    
@@ -96,6 +97,9 @@ func (c *ProductClient) CallRPC(ctx context.Context, pattern string, data interf
 
     select {
     case d := <-msgs:
+        rawBody := string(d.Body)
+        log.Printf("[DEBUG-NESTJS-RAW] Respuesta recibida de MS: %s", rawBody)
+
         var nestResponse NestJSResponse
         if err := json.Unmarshal(d.Body, &nestResponse); err != nil {
             return fmt.Errorf("fallo al deserializar respuesta NestJS: %w", err)
@@ -103,6 +107,11 @@ func (c *ProductClient) CallRPC(ctx context.Context, pattern string, data interf
 
         if nestResponse.Status == "error" {
             return fmt.Errorf("error en ms_products (RPC): %s", string(nestResponse.Response))
+        }
+
+        payloadBody := nestResponse.Response
+        if len(payloadBody) == 0 {
+            return errors.New("ms_products devolvió un payload de éxito vacío")
         }
 
         if err := json.Unmarshal(nestResponse.Response, response); err != nil {
@@ -116,13 +125,14 @@ func (c *ProductClient) CallRPC(ctx context.Context, pattern string, data interf
 }
 
 func (c *ProductClient) ValidateStock(ctx context.Context, items []ProductInput) (*StockValidationOutput, error) {
-    var output StockValidationOutput
-    err := c.CallRPC(ctx, "validate_stock", items, &output) 
-    log.Printf("[DEBUG-RPC] CalculateCart output, items: %+v, output: %+v", items, output)
+    var rpcResponse StockValidationOutput
+    err := c.CallRPC(ctx, "validate_stock", items, &rpcResponse) 
     if err != nil {
         return nil, err
     }
-    return &output, nil
+    
+    log.Printf("[DEBUG-RPC] Validación de stock completada. Válido: %t, Mensaje: %s", rpcResponse.Valid, rpcResponse.Message)
+    return &rpcResponse, nil
 }
 
 func (c *ProductClient) CalculateCart(ctx context.Context, items []ProductInput) (*CartCalculationOutput, error) {
