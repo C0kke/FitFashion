@@ -12,32 +12,33 @@ import (
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database"
     "github.com/C0kke/FitFashion/ms_cart/internal/product"
-    "github.com/C0kke/FitFashion/ms_cart/internal/messaging"
     "github.com/C0kke/FitFashion/ms_cart/internal/payments"
 )
 
 const CheckoutTTL = 10 * time.Minute 
 
-type OrderService struct {
-	OrderRepo     repository.OrderRepository
-	CartRepo      repository.CartRepository
-	RedisClient   *redis.Client 
-    
-    ProductClient product.ClientInterface
-
-    OrderPublisher *messaging.OrderPublisher
-    PaymentClient payments.PaymentClient
+type OrderPublisherInterface interface {
+    PublishOrderCreated(ctx context.Context, order *models.Order) error
 }
 
-func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productClient product.ClientInterface, orderPublisher *messaging.OrderPublisher, paymentClient payments.PaymentClient) *OrderService {
-	return &OrderService{
-		OrderRepo:   orderRepo,
-		CartRepo:    cartRepo,
-		RedisClient: database.RedisClient,
-        ProductClient: productClient,
+type OrderService struct {
+    OrderRepo      repository.OrderRepository
+    CartRepo       repository.CartRepository
+    RedisClient    *redis.Client 
+    ProductClient  product.ClientInterface
+    OrderPublisher OrderPublisherInterface 
+    PaymentClient  payments.PaymentClient
+}
+
+func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productClient product.ClientInterface, orderPublisher OrderPublisherInterface, paymentClient payments.PaymentClient) *OrderService {
+    return &OrderService{
+        OrderRepo:      orderRepo,
+        CartRepo:       cartRepo,
+        RedisClient:    database.RedisClient,
+        ProductClient:  productClient,
         OrderPublisher: orderPublisher,
-        PaymentClient: paymentClient,
-	}
+        PaymentClient:  paymentClient,
+    }
 }
 
 func (s *OrderService) ProcesarCompra(ctx context.Context, userID string, shippingAddress string) (*models.CheckoutResponse, error) {

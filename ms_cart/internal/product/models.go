@@ -5,6 +5,11 @@ type ProductInput struct {
     Quantity  int    `json:"quantity"`
 }
 
+type StockValidationResult struct {
+    Valid   bool   `json:"valid"`
+    Message string `json:"message"`
+}
+
 type StockValidationOutput struct {
     Valid   bool   `json:"valid"`
     Message string `json:"message"`
@@ -28,3 +33,4 @@ type DecreaseStockOutput struct {
     Success bool   `json:"success"`
     Message string `json:"message"`
 }
+

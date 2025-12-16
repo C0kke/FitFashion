@@ -10,11 +10,48 @@ import (
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 )
 
-type OrderPublisher struct {
+// AMQPConnection interface para permitir mocking
+type AMQPConnection interface {
+	Channel() (AMQPChannel, error)
+	Close() error
+}
+
+// AMQPChannel interface para permitir mocking
+type AMQPChannel interface {
+	Close() error
+	ExchangeDeclare(name, kind string, durable, autoDelete, internal, noWait bool, args amqp.Table) error
+	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
+}
+
+// RealAMQPConnection wrapper para *amqp.Connection que implementa AMQPConnection
+type RealAMQPConnection struct {
 	conn *amqp.Connection
 }
 
+func NewRealAMQPConnection(conn *amqp.Connection) *RealAMQPConnection {
+	return &RealAMQPConnection{conn: conn}
+}
+
+func (r *RealAMQPConnection) Channel() (AMQPChannel, error) {
+	return r.conn.Channel()
+}
+
+func (r *RealAMQPConnection) Close() error {
+	return r.conn.Close()
+}
+
+type OrderPublisher struct {
+	conn AMQPConnection
+}
+
 func NewOrderPublisher(conn *amqp.Connection) *OrderPublisher {
+	return &OrderPublisher{
+		conn: NewRealAMQPConnection(conn),
+	}
+}
+
+// NewOrderPublisherWithConn para testing, acepta una interfaz directamente
+func NewOrderPublisherWithConn(conn AMQPConnection) *OrderPublisher {
 	return &OrderPublisher{
 		conn: conn,
 	}

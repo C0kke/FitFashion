@@ -13,3 +13,8 @@ type Cart struct {
 	Items []CartItem `json:"items"`
     LastUpdated time.Time `json:"last_updated"`
 }
+
+type PaymentDetails struct {
+    Status            string `json:"status"`
+    ExternalReference string `json:"external_reference"`
+}

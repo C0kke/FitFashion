@@ -8,12 +8,15 @@ import (
 	"github.com/C0kke/FitFashion/ms_cart/internal/messaging"
 	"github.com/C0kke/FitFashion/ms_cart/internal/payments"
 	"github.com/C0kke/FitFashion/ms_cart/internal/product"
+<<<<<<< Updated upstream
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
 	"github.com/C0kke/FitFashion/ms_cart/internal/rpc"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database"
 	mqconn "github.com/C0kke/FitFashion/ms_cart/pkg/messaging"
 	"github.com/joho/godotenv"
+=======
+>>>>>>> Stashed changes
 )
 
 func main() {
@@ -36,9 +39,9 @@ func main() {
 
 	database.ConectarPostgres()
 	database.ConectarRedis()
-	mqconn.ConectarRabbitMQ()
+	messaging.ConectarRabbitMQ()
 
-	rabbitConn := mqconn.RabbitMQConn
+	rabbitConn := messaging.RabbitMQConn
 	if rabbitConn == nil {
 		log.Fatal("Fallo al obtener la conexión de RabbitMQ (RabbitMQConn es nil)")
 	}

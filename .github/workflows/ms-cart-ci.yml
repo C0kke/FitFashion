@@ -1,0 +1,70 @@
+name: Cart Service CI - FitFashion (Go)
+
+on:
+  push:
+    branches: [ "main", "master", "develop", "feature/**", "fix/**" ]
+    paths:
+      - 'ms_cart/**'
+      - '.github/workflows/ms-cart-ci.yml'
+  pull_request:
+    branches: [ "main", "master", "develop" ]
+    paths:
+      - 'ms_cart/**'
+      - '.github/workflows/ms-cart-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test and Coverage
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./ms_cart
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache-dependency-path: ./ms_cart/go.sum
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Run tests with coverage
+      run: go test ./internal/... -coverprofile=coverage.out -covermode=atomic
+
+    - name: Display coverage report
+      run: |
+        echo "=== Coverage Report ==="
+        go tool cover -func=coverage.out
+        echo ""
+        echo "=== Total Coverage ==="
+        go tool cover -func=coverage.out | grep total | awk '{print "Total Coverage: " $3}'
+
+    - name: Check coverage threshold (60%)
+      run: |
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "Coverage: ${COVERAGE}%"
+        THRESHOLD=60
+        if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+          echo "❌ Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
+          exit 1
+        fi
+        echo "✅ Coverage ${COVERAGE}% meets ${THRESHOLD}% threshold"
+
+    - name: Upload coverage to Codecov (optional)
+      if: github.event_name == 'push'
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./ms_cart/coverage.out
+        flags: ms_cart
+        name: ms_cart-coverage
+        fail_ci_if_error: false

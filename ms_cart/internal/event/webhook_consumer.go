@@ -7,24 +7,73 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/streadway/amqp"
 	"github.com/C0kke/FitFashion/ms_cart/internal/models"
 	"github.com/C0kke/FitFashion/ms_cart/internal/payments"
 	"github.com/C0kke/FitFashion/ms_cart/internal/service"
+	"github.com/streadway/amqp"
 )
+
+// 1. Interfaz para mockear el servicio de órdenes
+type OrderStatusUpdater interface {
+	UpdateStatus(ctx context.Context, orderID uint, status string) error
+}
 
 type WebhookConsumer struct {
 	Channel       *amqp.Channel
-	OrderService  *service.OrderService
+	OrderService  OrderStatusUpdater // Usamos la interfaz
 	PaymentClient payments.PaymentClient
 }
 
+// Mantenemos la firma del constructor para no romper main.go
 func NewWebhookConsumer(ch *amqp.Channel, orderS *service.OrderService, payClient payments.PaymentClient) *WebhookConsumer {
 	return &WebhookConsumer{
 		Channel:       ch,
-		OrderService:  orderS,
+		OrderService:  orderS, // El struct concreto cumple la interfaz
 		PaymentClient: payClient,
 	}
+}
+
+// 2. Nueva función PÚBLICA y TESTEABLE (Lógica pura)
+// Retorna error si hay fallo de sistema (para hacer Nack y reintentar).
+// Retorna nil si todo salió bien O si el mensaje es inválido (para hacer Ack y descartar).
+func (c *WebhookConsumer) ProcessWebhook(ctx context.Context, body []byte) error {
+	var notif models.WebhookNotification
+	if err := json.Unmarshal(body, &notif); err != nil {
+		log.Printf("Error JSON Webhook: %v", err)
+		return nil // Ack (Descartar basura)
+	}
+
+	paymentID := notif.Data.ID
+	if paymentID == "" {
+		log.Printf("Webhook sin PaymentID, descartando.")
+		return nil // Ack (Descartar sin ID)
+	}
+
+	log.Printf("🔔 Procesando Pago ID: %s", paymentID)
+
+	details, err := c.PaymentClient.GetPaymentStatus(ctx, paymentID)
+	if err != nil {
+		log.Printf("Error consultando API MercadoPago: %v", err)
+		return err // Nack (Reintentar por error de red/API)
+	}
+
+	log.Printf("Verificado MP: %s | Orden Ref: %s", details.Status, details.ExternalReference)
+
+	orderIDUint, err := strconv.ParseUint(details.ExternalReference, 10, 64)
+	if err != nil {
+		log.Printf("Error ExternalReference no es un ID válido: %v", err)
+		return nil // Ack (Referencia inválida, no recuperable)
+	}
+
+	nuevoEstado := MapStatus(details.Status) // Usamos la función helper (ahora pública con Mayúscula opcionalmente, o la dejamos local)
+	
+	err = c.OrderService.UpdateStatus(ctx, uint(orderIDUint), nuevoEstado)
+	if err != nil {
+		log.Printf("Error actualizando DB Orden %d: %v", orderIDUint, err)
+		return err // Nack (Error de DB, reintentar)
+	}
+
+	return nil // Ack (Éxito)
 }
 
 func (c *WebhookConsumer) Start() {
@@ -57,62 +106,35 @@ func (c *WebhookConsumer) Start() {
 }
 
 func (c *WebhookConsumer) handleMessage(d amqp.Delivery) {
-    defer func() {
+	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Pánico en consumer: %v", r)
 			d.Nack(false, false)
 		}
 	}()
 
-	var notif models.WebhookNotification
-	if err := json.Unmarshal(d.Body, &notif); err != nil {
-		log.Printf("Error JSON Webhook: %v", err)
-		d.Ack(false)
-		return
-	}
+	// Delegamos la lógica a la función testeable
+	err := c.ProcessWebhook(context.Background(), d.Body)
 
-    paymentID := notif.Data.ID
-	if paymentID == "" {
-        log.Printf("Webhook sin PaymentID, descartando.")
-		d.Ack(false)
-		return
-	}
-
-	log.Printf("🔔 Procesando Pago ID: %s", paymentID)
-
-	details, err := c.PaymentClient.GetPaymentStatus(context.Background(), paymentID)
 	if err != nil {
-		log.Printf("Error consultando API MercadoPago: %v", err)
-		d.Nack(false, true) 
-		return
-	}
-
-	log.Printf("Verificado MP: %s | Orden Ref: %s", details.Status, details.ExternalReference)
-
-	orderIDUint, err := strconv.ParseUint(details.ExternalReference, 10, 64)
-	if err != nil {
-		log.Printf("Error ExternalReference no es un ID válido: %v", err)
+		// Si devolvió error, es un fallo transitorio -> Reintentar
+		d.Nack(false, true)
+	} else {
+		// Si devolvió nil, es éxito o error irrecuperable -> Confirmar
 		d.Ack(false)
-		return
 	}
-
-	nuevoEstado := mapStatus(details.Status)
-	err = c.OrderService.UpdateStatus(context.Background(), uint(orderIDUint), nuevoEstado)
-	
-    if err != nil {
-		log.Printf("Error actualizando DB Orden %d: %v", orderIDUint, err)
-		d.Nack(false, true) 
-		return
-	}
-
-	d.Ack(false) 
 }
 
-func mapStatus(mpStatus string) string {
+// Helper function (Exportada para testearla fácil si quieres, o déjala minúscula)
+func MapStatus(mpStatus string) string {
 	switch mpStatus {
-	case "approved": return "PAGADO"
-	case "rejected", "cancelled": return "CANCELADO"
-	case "in_process", "pending": return "PENDIENTE"
-	default: return strings.ToUpper(mpStatus)
+	case "approved":
+		return "PAGADO"
+	case "rejected", "cancelled":
+		return "CANCELADO"
+	case "in_process", "pending":
+		return "PENDIENTE"
+	default:
+		return strings.ToUpper(mpStatus)
 	}
 }
