@@ -82,16 +82,22 @@ export const cartService = {
         }
     },
 
-    checkout: async (shippingAddressId) => {
+    checkout: async (selectedAddress) => { 
         try {
             const { data } = await client.mutate({
                 mutation: CHECKOUT_MUTATION,
-                variables: { shippingAddressId }
+                variables: { 
+                    shippingAddress: selectedAddress
+                }
             });
+            
+            const result = data.checkout;
             return {
-                status: data.createOrder.status,
-                message: data.createOrder.message,
-                order: data.createOrder.order
+                status: result.status, 
+                order: {
+                    order_id: result.order_id,
+                    payment_url: result.payment_url
+                }
             };
         } catch (error) {
             console.error("Error en checkout", error);

@@ -46,7 +46,7 @@ const typeDefs = `#graphql
     extend type Mutation {
         addItemToCart(productId: ID!, quantity: Int!): Cart
         removeItemFromCart(productId: ID!): Cart
-        checkout: CheckoutResponse
+        checkout(shippingAddress: String!): CheckoutResponse
     }
 `;
 
@@ -105,18 +105,18 @@ const resolvers = {
             return await rabbitRequest(rabbitChannel, responseEmitter, 'cart_rpc_queue', payload);
         },
 
-        checkout: async (_, __, context) => {
+        checkout: async (_, { shippingAddress }, context) => {
             const { user_id, shipping_address, rabbitChannel, responseEmitter } = context; 
             
-            if (!user_id || !shipping_address) {
-                throw new Error("No es posible completar el checkout. Faltan datos de usuario o dirección.");
+            if (!user_id) {
+                throw new Error("No es posible completar el checkout. Faltan datos de usuario.");
             }
 
             const payload = {
                 pattern: 'process_checkout',
                 data: { 
                     user_id: user_id,
-                    shipping_address: shipping_address
+                    shipping_address: shippingAddress
                 } 
             };
             
