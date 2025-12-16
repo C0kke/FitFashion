@@ -1,75 +1,98 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Rnd } from 'react-rnd';
-import { useCart } from '../store/CartContext';
 import './styles/OutfitBuilder.css';
 import MannequinBase from '../assets/mannequin_base.jpeg'; 
 
-const OutfitBuilder = () => {
-    const { items: cartItems } = useCart(); 
+import client from '../services/graphql/client';    
+import { GET_PRODUCTS_QUERY } from '../services/graphql/products.queries';
 
-    // --- 1. CAMBIO PRINCIPAL: Array en lugar de Objeto con Slots ---
-    // Esto permite capas infinitas ordenadas por llegada
+const OutfitBuilder = () => {
+    // Estados
+    const [catalogProducts, setCatalogProducts] = useState([]); 
     const [outfitItems, setOutfitItems] = useState([]);
     
-    // Lista de productos disponibles (del carrito)
-    const [products, setProducts] = useState([]); 
+    // Estado para saber cuál prenda está seleccionada
+    const [selectedPieceId, setSelectedPieceId] = useState(null);
+
     const [selectedCategory, setSelectedCategory] = useState('Todos');
+    const [searchTerm, setSearchTerm] = useState('');
 
-    // Sincronización Carrito -> Probador
+    // --- CARGA DE DATOS ---
     useEffect(() => {
-        if (cartItems) {
-            setProducts(cartItems);
-        }
-    }, [cartItems]);
+        const fetchCatalog = async () => {
+            try {
+                const { data } = await client.query({
+                    query: GET_PRODUCTS_QUERY,
+                    fetchPolicy: 'network-only' 
+                });
+                setCatalogProducts(data.products || []);
+            } catch (error) {
+                console.error("Error cargando catálogo:", error);
+            }
+        };
+        fetchCatalog();
+    }, []); 
 
-    // Categorías dinámicas
+    // --- LÓGICA DE FILTROS ---
     const dynamicCategories = useMemo(() => {
-        if (!products.length) return ['Todos'];
-        const allCats = products.flatMap(p => p.categories || []);
+        if (!catalogProducts.length) return ['Todos'];
+        const allCats = catalogProducts.flatMap(p => p.categories || []);
         const uniqueCats = [...new Set(allCats)];
         return ['Todos', ...uniqueCats.sort()];
-    }, [products]);
+    }, [catalogProducts]);
 
-    // --- 2. LOGICA DE AGREGAR ---
-    const handleSelectProduct = (product) => {
+    const filteredProducts = catalogProducts.filter(p => {
+        const matchesCategory = selectedCategory === 'Todos' || (p.categories && p.categories.includes(selectedCategory));
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCategory && matchesSearch;
+    });
 
-        if (!product.builderImage) {
-            alert("Este producto no tiene imagen disponible para el probador virtual.");
-            return;
-        }
+    // --- LÓGICA DEL PROBADOR ---
 
-        const isAlreadyInOutfit = outfitItems.some(item => item.product.id === product.id);
-
-        if (isAlreadyInOutfit) {
-            console.warn(`El producto ${product.name} (ID: ${product.id}) ya está en el probador.`);
-            return; 
-        }
-        const newItem = {
-            uniqueId: Date.now(), 
-            product: product,
-            x: 50, 
-            y: 50,
-            width: 200, 
-            height: 200 
-        };
-
-
-        setOutfitItems(prev => [...prev, newItem]);
+    const handleDragStart = (e, product) => {
+        e.dataTransfer.setData("product", JSON.stringify(product));
+        const imgElement = e.currentTarget.querySelector('img');
+        if (imgElement) e.dataTransfer.setDragImage(imgElement, 25, 25);
     };
 
-    // Actualizar posición/tamaño de un item específico
+    const handleSelectProduct = (product) => {
+        if (!product.builderImage) {
+            alert("Este producto no tiene imagen para el probador.");
+            return;
+        }
+        const isAlreadyInOutfit = outfitItems.some(item => item.product.id === product.id);
+        if (isAlreadyInOutfit) return; 
+
+        const newItem = {
+            uniqueId: Date.now(), 
+            product: product, 
+            x: 50, y: 50, width: 200, height: 200 
+        };
+        setOutfitItems(prev => [...prev, newItem]);
+        setSelectedPieceId(newItem.uniqueId); // Auto-seleccionar
+    };
+
     const updatePieceState = (uniqueId, data) => {
         setOutfitItems(prev => prev.map(item => 
             item.uniqueId === uniqueId ? { ...item, ...data } : item
         ));
     };
 
-    // Eliminar un item específico (Doble click)
     const removeItem = (uniqueId) => {
         setOutfitItems(prev => prev.filter(item => item.uniqueId !== uniqueId));
+        if (selectedPieceId === uniqueId) setSelectedPieceId(null);
     };
 
-    // Drop Handler
+    const handlePieceClick = (uniqueId) => {
+        setSelectedPieceId(uniqueId);
+    };
+
+    const handleStageClick = (e) => {
+        if (e.target.className.includes('full-height-layers') || e.target.className.includes('stage-center')) {
+            setSelectedPieceId(null);
+        }
+    };
+
     const handleDrop = (e) => {
         e.preventDefault();
         try {
@@ -78,25 +101,16 @@ const OutfitBuilder = () => {
         } catch (error) { console.error("Error drop:", error); }
     };
 
-    const filteredProducts = products.filter(p => selectedCategory === 'Todos' || (p.categories && p.categories.includes(selectedCategory)));
+    // --- OBTENER INFO DE LA PRENDA SELECCIONADA ---
+    const selectedItemData = outfitItems.find(item => item.uniqueId === selectedPieceId);
 
-    if (!cartItems || cartItems.length === 0) {
-        return (
-            <div className="immersive-builder-page">
-                <div style={{margin: 'auto', textAlign: 'center'}}>
-                    <h2>Tu probador está vacío</h2>
-                    <p>Agrega productos al carrito para probarlos aquí.</p>
-                </div>
-            </div>
-        );
-    }
+    if (!catalogProducts.length) return <div className="immersive-builder-page"><p>Cargando catálogo...</p></div>;
 
     return (
         <div className="immersive-builder-page">
             
-            {/* PANEL IZQUIERDO */}
             <div className="panel-left">
-                <div className="panel-header"><h3>Tus Prendas</h3></div>
+                <div className="panel-header"><h3>Categorías</h3></div>
                 <ul className="category-menu">
                     {dynamicCategories.map(cat => (
                         <li key={cat} className={selectedCategory === cat ? 'active' : ''} onClick={() => setSelectedCategory(cat)}>{cat}</li>
@@ -105,12 +119,11 @@ const OutfitBuilder = () => {
             </div>
 
             {/* CENTRO: ESCENARIO */}
-            <div className="stage-center" onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
+            <div className="stage-center" onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={handleStageClick}>
                 <div className="full-height-layers" style={{position: 'relative', width: '100%', height: '100%', overflow: 'hidden'}}>
                     <img src={MannequinBase} alt="Base" style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
                     
-                    {/* --- 3. RENDERIZADO POR MAPA DE ARRAY (Sin zIndex manual) --- */}
-                    {outfitItems.map((item, index) => (
+                    {outfitItems.map((item) => (
                         <Rnd
                             key={item.uniqueId}
                             size={{ width: item.width, height: item.height }}
@@ -121,38 +134,63 @@ const OutfitBuilder = () => {
                             }}
                             bounds="parent"
                             lockAspectRatio={true}
-                            // Eliminamos style={{ zIndex... }}. El orden del array dicta la capa.
-                            className="rnd-item"
-                            onDoubleClick={() => removeItem(item.uniqueId)} // Atajo para borrar
+                            className={`rnd-item ${selectedPieceId === item.uniqueId ? 'selected-piece' : ''}`}
+                            
+                            onMouseDown={() => handlePieceClick(item.uniqueId)}
+                            onTouchStart={() => handlePieceClick(item.uniqueId)}
+                            onDoubleClick={() => removeItem(item.uniqueId)}
                         >
                             <img src={item.product.builderImage} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
                         </Rnd>
                     ))}
                 </div>
 
+                {/* --- INFO FLOTANTE (Solo Nombre, Precio y Borrar) --- */}
+                {selectedItemData && (
+                    <div className="floating-info-card">
+                        <div className="info-content">
+                            <strong>{selectedItemData.product.name}</strong>
+                            <span>${(selectedItemData.product.price || 0).toLocaleString('es-CL')}</span>
+                        </div>
+                        <div className="info-actions">
+                            <button className="btn-delete" onClick={() => removeItem(selectedItemData.uniqueId)}>
+                                Quitar del Maniquí 🗑️
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="floating-controls">
-                    <button className="btn-clean" onClick={() => setOutfitItems([])}>Limpiar Todo</button>
+                    <button className="btn-clean" onClick={() => { setOutfitItems([]); setSelectedPieceId(null); }}>Limpiar Todo</button>
                 </div>
             </div>
 
-            {/* PANEL DERECHO */}
             <div className="panel-right">
                 <div className="panel-header">
-                    <h3>En tu Carrito</h3>
-                    <small>{filteredProducts.length} prendas</small>
+                    <h3>Catálogo</h3>
+                    <input 
+                        type="text" 
+                        placeholder="Buscar prenda..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{width: '90%', padding: '8px', marginTop: '10px', borderRadius: '5px', border: '1px solid #ccc'}}
+                    />
+                    <small style={{display:'block', marginTop:'5px'}}>{filteredProducts.length} resultados</small>
                 </div>
+
                 <div className="products-scroll-grid">
                     {filteredProducts.map((product) => (
                         <div 
                             key={product.id} className="mini-product-item" title={product.name}
                             onClick={() => handleSelectProduct(product)}
-                            draggable onDragStart={(e) => e.dataTransfer.setData("product", JSON.stringify(product))}
+                            draggable onDragStart={(e) => handleDragStart(e, product)}
                         >
                             {product.builderImage ? (
                                 <img src={product.builderImage} alt={product.name} style={{width: '80%', height: '80%', objectFit: 'contain'}} draggable="false" />
-                            ) : <div className="mini-placeholder">{product.name.substring(0, 10)}...</div>}
+                            ) : <div className="mini-placeholder">{product.name?.substring(0, 10)}...</div>}
+                            
                             <span style={{position: 'absolute', bottom: '5px', right: '5px', fontSize: '0.7rem', background: 'rgba(255,255,255,0.9)', padding: '2px 5px', borderRadius: '4px'}}>
-                                ${product.price.toLocaleString('es-CL')}
+                                ${(product.price || 0).toLocaleString('es-CL')}
                             </span>
                         </div>
                     ))}

@@ -167,6 +167,9 @@ const AdminCreateProduct = () => {
                 galleryImages: galleryUrls 
             };
 
+            console.log("1. URL que devolvió Cloudinary:", assetUrl);
+            console.log("2. Payload FINAL que se envía al backend:", productPayload);   
+
             // Enviar al backend
             await productService.createProduct(productPayload);
             

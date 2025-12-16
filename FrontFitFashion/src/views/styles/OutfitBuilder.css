@@ -174,3 +174,83 @@
     border: 1px dashed #00bfff !important; /* Azulito al pasar el mouse */
     cursor: move;
 }
+
+/* =========================================
+   AGREGA ESTO AL FINAL DE TU ARCHIVO CSS
+   ========================================= */
+
+/* 1. CORRECCIÓN CRÍTICA: Esto evita que el precio se vaya a la esquina */
+.mini-product-item {
+    position: relative; 
+}
+
+/* 2. Estilo cuando seleccionas una prenda en el maniquí */
+.selected-piece {
+    border: 2px dashed #007bff !important; /* Borde azul */
+    background-color: rgba(0, 123, 255, 0.1); /* Fondo azulito suave */
+    z-index: 100; /* Para que quede encima de las otras */
+}
+
+/* 3. Tarjeta Flotante con info del producto */
+.floating-info-card {
+    position: absolute;
+    bottom: 80px; /* Un poco arriba de los controles flotantes */
+    left: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 220px;
+    border: 1px solid #eee;
+    animation: slideUp 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-content strong {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.info-content span {
+    font-size: 1.1rem;
+    color: var(--color-accent, #000); /* Usa tu color de acento o negro */
+    font-weight: 700;
+}
+
+.info-actions {
+    display: flex;
+    width: 100%;
+}
+
+.btn-delete {
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background-color: #c53030;
+    color: white;
+}
+
+/* Animación suave de entrada */
+@keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
