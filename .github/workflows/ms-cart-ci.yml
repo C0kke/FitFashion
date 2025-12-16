@@ -43,8 +43,14 @@ jobs:
 
     - name: Display coverage report
       run: |
-        echo "=== Coverage Report ==="
-        go tool cover -func=coverage.out
+        echo "=== Coverage by Package ==="
+        echo "| Package | Coverage |"
+        echo "|---------|----------|"
+        go tool cover -func=coverage.out | grep -E "^github.com" | awk -F'/' '{print $NF}' | awk '{package=$1; coverage=$NF} END {print package " | " coverage}'
+        go test ./internal/... -cover | grep -E "coverage:" | awk '{print "| " $2 " | " $4 " | " $6 " |"}'
+        echo ""
+        echo "=== Detailed Coverage Report ==="
+        go tool cover -func=coverage.out | tail -20
         echo ""
         echo "=== Total Coverage ==="
         go tool cover -func=coverage.out | grep total | awk '{print "Total Coverage: " $3}'
@@ -55,10 +61,10 @@ jobs:
         echo "Coverage: ${COVERAGE}%"
         THRESHOLD=60
         if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-          echo "❌ Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
+          echo "Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
           exit 1
         fi
-        echo "✅ Coverage ${COVERAGE}% meets ${THRESHOLD}% threshold"
+        echo "Coverage ${COVERAGE}% meets ${THRESHOLD}% threshold"
 
     - name: Upload coverage to Codecov (optional)
       if: github.event_name == 'push'
