@@ -43,17 +43,21 @@ jobs:
 
     - name: Display coverage report
       run: |
-        echo "=== Coverage by Package ==="
-        echo "| Package | Coverage |"
-        echo "|---------|----------|"
-        go tool cover -func=coverage.out | grep -E "^github.com" | awk -F'/' '{print $NF}' | awk '{package=$1; coverage=$NF} END {print package " | " coverage}'
-        go test ./internal/... -cover | grep -E "coverage:" | awk '{print "| " $2 " | " $4 " | " $6 " |"}'
+        echo "========================================="
+        echo "COVERAGE BY PACKAGE"
+        echo "========================================="
+        go test ./internal/... -cover 2>&1 | grep "coverage:" | sed 's/ok[[:space:]]*//' | sed 's/[[:space:]][[:digit:]]*\.[[:digit:]]*s//' | column -t
         echo ""
-        echo "=== Detailed Coverage Report ==="
+        echo "========================================="
+        echo "DETAILED COVERAGE (Last 20 functions)"
+        echo "========================================="
         go tool cover -func=coverage.out | tail -20
         echo ""
-        echo "=== Total Coverage ==="
-        go tool cover -func=coverage.out | grep total | awk '{print "Total Coverage: " $3}'
+        echo "========================================="
+        echo "TOTAL COVERAGE"
+        echo "========================================="
+        go tool cover -func=coverage.out | grep total
+        echo "========================================="
 
     - name: Check coverage threshold (60%)
       run: |
