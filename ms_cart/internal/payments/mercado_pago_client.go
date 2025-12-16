@@ -85,7 +85,7 @@ func (m *MercadoPagoClient) StartTransaction(ctx context.Context, orderID uint, 
     if frontendURL := os.Getenv("FRONTEND_URL"); frontendURL != "" {
         request.BackURLs = &MPBackURLs{
             Success: frontendURL + "/success",
-            Failure: frontendURL + "/failure",
+            Failure: frontendURL + "/failed",
         }
     }
     
