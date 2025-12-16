@@ -30,8 +30,13 @@ const OutfitBuilder = () => {
         return ['Todos', ...uniqueCats.sort()];
     }, [products]);
 
-    // --- 2. LOGICA DE AGREGAR (Push al final del array) ---
+    // --- 2. LOGICA DE AGREGAR ---
     const handleSelectProduct = (product) => {
+
+        if (!product.builderImage) {
+            alert("Este producto no tiene imagen disponible para el probador virtual.");
+            return;
+        }
 
         const isAlreadyInOutfit = outfitItems.some(item => item.product.id === product.id);
 
@@ -40,15 +45,15 @@ const OutfitBuilder = () => {
             return; 
         }
         const newItem = {
-            uniqueId: Date.now(), // ID único para que React distinga capas (incluso si repites prenda)
+            uniqueId: Date.now(), 
             product: product,
-            x: 50, // Posición inicial genérica
+            x: 50, 
             y: 50,
             width: 200, 
             height: 200 
         };
 
-        // Agregamos al final del array -> Queda en la capa superior
+
         setOutfitItems(prev => [...prev, newItem]);
     };
 
