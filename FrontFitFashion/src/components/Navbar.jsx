@@ -58,6 +58,10 @@ const Navbar = () => {
         navigate("/");
     };
 
+    const navigateToHistory = () => {
+        navigate("/orderhistory");
+    }
+
     const navigateToAdmin = () => {
         navigate("/admin/dashboard");
     };
@@ -111,6 +115,7 @@ const Navbar = () => {
                 )}
 
                 <button onClick={navigateToSimulate}>Simular outfit</button>
+                <button onClick={navigateToHistory}>Mis Pedidos</button>
 
                 <button onClick={openCart} className="cart-button">
                     <img src={CartIcon} alt="Cart Icon" className="cartIcon" />

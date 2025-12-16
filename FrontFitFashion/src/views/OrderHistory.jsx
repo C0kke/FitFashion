@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import './styles/OrderHistory.css'; 
 
@@ -7,36 +6,13 @@ const mockOrderHistory = [
     {
         id: 'FF-890123',
         fecha: '2025-11-20',
-        total: 180,
+        total: 35000,
         estado: 'PAGADO',
         items: 3,
         detalle: [
-            { nombre: 'Camisa Casual', cantidad: 1, precio: 35 },
-            { nombre: 'Pantalones Jeans', cantidad: 1, precio: 65 },
-            { nombre: 'Zapatillas', cantidad: 1, precio: 80 },
+            { nombre: 'Camisa Casual', cantidad: 1, precio: 35000 },
         ],
-    },
-    {
-        id: 'FF-890124',
-        fecha: '2025-12-05',
-        total: 120,
-        estado: 'PENDIENTE',
-        items: 2,
-        detalle: [
-            { nombre: 'Camisa Casual', cantidad: 2, precio: 70 },
-            { nombre: 'Accesorios', cantidad: 1, precio: 50 },
-        ],
-    },
-    {
-        id: 'FF-890125',
-        fecha: '2025-12-10',
-        total: 45,
-        estado: 'CANCELADO',
-        items: 1,
-        detalle: [
-            { nombre: 'Accesorios', cantidad: 1, precio: 45 },
-        ],
-    },
+    }
 ];
 
 const OrderHistory = () => {
@@ -62,7 +38,6 @@ const OrderHistory = () => {
 
     return (
         <div className="history-container">
-            <Navbar />
             <div className="history-content">
                 <div className="history-header">
                     <h1>Historial de Órdenes</h1>
@@ -97,16 +72,6 @@ const OrderHistory = () => {
                                     <div className={`order-info status-info status-${order.estado.toLowerCase().replace(/\s/g, '-')}`}>
                                         <strong>Estado:</strong> <span>{order.estado}</span>
                                     </div>
-                                </div>
-
-                                <div className="order-actions">
-                                    <p className="order-items-count">{order.items} artículos</p>
-                                    <button 
-                                        onClick={() => handleViewDetails(order.id)}
-                                        className="view-details-button"
-                                    >
-                                        Ver Detalle
-                                    </button>
                                 </div>
                             </div>
                         ))}
