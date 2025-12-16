@@ -2,29 +2,36 @@ name: Django CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.7, 3.8, 3.9]
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+    - name: Checkout del código
+      uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
+        python-version: '3.11'
+
+    - name: Instalar dependencias
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Run Tests
+        pip install coverage  # Instalamos coverage también aquí
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Correr Tests y Coverage
+      env:
+        # Variables de entorno para que Django no falle al iniciar
+        SECRET_KEY: 'django-insecure-test-key-para-ci'
+        DEBUG: 'True'
+        # Si usas Postgres, aquí van las credenciales del servicio de arriba
+        # DB_ENGINE: 'django.db.backends.postgresql'
       run: |
-        python manage.py test
+        # Corremos los tests y mostramos el reporte en la consola de GitHub
+        coverage run --source='users' manage.py test users
+        coverage report
