@@ -33,6 +33,6 @@ export class CreateProductDto {
   galleryImages: string[];
 
   @IsString()
-  builderImage?: string;
+  builderImage: string;
 
 }
