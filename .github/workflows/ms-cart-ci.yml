@@ -49,11 +49,6 @@ jobs:
         go test ./internal/... -cover 2>&1 | grep "coverage:" | sed 's/ok[[:space:]]*//' | sed 's/[[:space:]][[:digit:]]*\.[[:digit:]]*s//' | column -t
         echo ""
         echo "========================================="
-        echo "DETAILED COVERAGE (Last 20 functions)"
-        echo "========================================="
-        go tool cover -func=coverage.out | tail -20
-        echo ""
-        echo "========================================="
         echo "TOTAL COVERAGE"
         echo "========================================="
         go tool cover -func=coverage.out | grep total
