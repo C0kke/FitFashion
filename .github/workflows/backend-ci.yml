@@ -16,30 +16,33 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x] 
+        node-version: [18.x]
 
     steps:
-    # 1. Bajar el código completo del repo
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 2. Instalar Node.js
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        # Importante: Le decimos a la caché dónde está el archivo de bloqueo específico
         cache-dependency-path: ./ms_products/package-lock.json
 
-    # 3. Instalar dependencias 
     - name: Install dependencies
       run: npm ci
 
-    # 4. Verificar compilación
     - name: Build
       run: npm run build --if-present
 
-    # 5. Correr Tests y verificar Cobertura (>60%)
+
     - name: Run Tests with Coverage
       run: npm run test:cov
+
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v4
+      if: always() 
+      with:
+        name: coverage-report
+        path: ./ms_products/coverage/ 
+        retention-days: 30
