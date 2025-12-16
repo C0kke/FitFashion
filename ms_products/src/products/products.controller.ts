@@ -61,6 +61,15 @@ export class ProductsController {
   //  ESCUCHA DE RABBITMQ (MODO MANUAL - SIN EMOJIS)
   // ======================================================
 
+  //Crear producto que viene del API Gateway
+  @MessagePattern('create_product')
+  async handleCreateProduct(@Payload() data: CreateProductDto, @Ctx() context: RmqContext) {
+    await this.replyManual(context, async () => {
+      console.log('✨ [RabbitMQ] Creando nuevo producto:', data.name);
+      return await this.productsService.create(data);
+    });
+  }
+
   // 1. Obtener TODOS los productos
   @MessagePattern('find_all_products')
   async handleFindAll(@Payload() filters: FilterProductDto, @Ctx() context: RmqContext) {

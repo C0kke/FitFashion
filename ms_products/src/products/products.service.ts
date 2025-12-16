@@ -15,6 +15,11 @@ export class ProductsService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+  async create(createProductDto: CreateProductDto) {
+    const product = this.productRepo.create(createProductDto);
+    return await this.productRepo.save(product);
+  }
+
   async createWithImages(createProductDto: CreateProductDto, files: { galleryImages?: Express.Multer.File[], assetImage?: Express.Multer.File[] }) {
     const { galleryImages, assetImage } = files || {};
     
