@@ -110,7 +110,7 @@ const AdminUsers = () => {
         <div className="admin-container">
             <div className="admin-header">
                 <h2>Administración de Usuarios</h2>
-                <button className="btn-save" style={{ marginLeft: '20px', backgroundColor: '#28a745' }} onClick={() => navigate('/admin/create-product')}>+ Nuevo Producto</button>
+                <button className="btn-add-premium"  onClick={() => navigate('/admin/create-product')}> <span className="plus-icon">+</span>Nuevo Producto</button>
                 <span className="user-count">{users.length} Registrados</span>
             </div>
             

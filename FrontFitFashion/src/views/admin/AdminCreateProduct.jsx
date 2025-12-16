@@ -9,7 +9,9 @@ const AdminCreateProduct = () => {
     const [error, setError] = useState(null);
     const [statusMsg, setStatusMsg] = useState(""); 
 
-    // Estado del formulario (Quitamos layerIndex de aquí porque será fijo)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+    // Estado del formulario
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -26,10 +28,11 @@ const AdminCreateProduct = () => {
     const [galleryImages, setGalleryImages] = useState([]); 
     const [galleryPreviews, setGalleryPreviews] = useState([]);
 
-    // --- CONFIGURACIÓN CLOUDINARY ---
+    // Cloudinary Config
     const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
+    // Manejo de cambios en inputs de texto
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -37,8 +40,19 @@ const AdminCreateProduct = () => {
 
     // Manejo de imagen del Maniquí 
     const handleAssetImageChange = (e) => {
+        setError(null); 
         const file = e.target.files[0];
+        
         if (file) {
+            if (file.size > MAX_FILE_SIZE) {
+                setError("La imagen del maniquí es muy pesada (Máx 5MB).");
+                e.target.value = "";
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                setError("El archivo del maniquí debe ser una imagen válida.");
+                return;
+            }
             setAssetImage(file);
             setAssetPreview(URL.createObjectURL(file));
         }
@@ -46,10 +60,28 @@ const AdminCreateProduct = () => {
 
     // Manejo de imágenes de Galería
     const handleGalleryImagesChange = (e) => {
+        setError(null);
         const files = Array.from(e.target.files);
-        if (files.length > 0) {
-            setGalleryImages(prev => [...prev, ...files]);
-            const newPreviews = files.map(file => URL.createObjectURL(file));
+        let errorMsg = "";
+        
+        // Filtrar archivos válidos
+        const validFiles = files.filter(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                aerrorMsg = `La imagen "${file.name}" pesa más de 5MB y fue ignorada.`;
+                return false;
+            }
+            return true;
+        });
+
+        if (validFiles.length > 0) {
+            // Máximo 5 imágenes en total
+            if (galleryImages.length + validFiles.length > 5) {
+                setError("Solo puedes tener un máximo de 5 imágenes en la galería. Se ignoraron algunas.");
+                return;
+            }
+
+            setGalleryImages(prev => [...prev, ...validFiles]);
+            const newPreviews = validFiles.map(file => URL.createObjectURL(file));
             setGalleryPreviews(prev => [...prev, ...newPreviews]);
         }
     };
@@ -59,7 +91,7 @@ const AdminCreateProduct = () => {
         setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    // --- FUNCIÓN DE SUBIDA A CLOUDINARY ---
+    // Subir a Cloudinary
     const uploadToCloudinary = async (file) => {
         const data = new FormData();
         data.append("file", file);
@@ -84,51 +116,72 @@ const AdminCreateProduct = () => {
         e.preventDefault();
         setLoading(true);
         setError(null);
-        setStatusMsg("Iniciando carga de imágenes...");
+        setStatusMsg("Validando datos...");
 
         try {
-            // 1. Validaciones
-            if (!assetImage) throw new Error("Debes subir la imagen para el maniquí.");
-            if (galleryImages.length === 0) throw new Error("Debes subir al menos una imagen para la galería.");
+            // Limpiar espacios en blanco al inicio y final
+            const cleanName = formData.name.trim();
+            const cleanDesc = formData.description.trim();
+            const cleanPrice = parseInt(formData.price);
+            const cleanStock = parseInt(formData.stock);
 
-            // 2. Subir Asset (Maniquí)
+            // Validaciones de Texto
+            if (!cleanName) throw new Error("El nombre del producto no puede estar vacío.");
+            if (cleanName.length < 3) throw new Error("El nombre es muy corto.");
+            if (!cleanDesc) throw new Error("La descripción es obligatoria.");
+
+            // Validaciones Numéricas
+            if (isNaN(cleanPrice) || cleanPrice < 0) throw new Error("El precio debe ser un número válido mayor o igual a 0.");
+            if (isNaN(cleanStock) || cleanStock < 0) throw new Error("El stock debe ser un número válido mayor o igual a 0.");
+
+            // Validaciones de Listas
+            const cleanCategories = formData.categories.split(',').map(c => c.trim()).filter(Boolean);
+            const cleanStyles = formData.styles.split(',').map(s => s.trim()).filter(Boolean);
+
+            if (cleanCategories.length === 0) throw new Error("Debes agregar al menos una categoría válida.");
+            if (cleanStyles.length === 0) throw new Error("Debes agregar al menos un estilo.");
+
+            // Validaciones de Imágenes
+            if (!assetImage) throw new Error("Falta la imagen del maniquí (Asset).");
+            if (galleryImages.length === 0) throw new Error("Falta al menos una imagen en la galería.");
+
             setStatusMsg("Subiendo imagen del maniquí...");
             const assetUrl = await uploadToCloudinary(assetImage);
 
-            // 3. Subir Galería 
             setStatusMsg(`Subiendo ${galleryImages.length} imágenes de galería...`);
             const galleryUploadPromises = galleryImages.map(file => uploadToCloudinary(file));
             const galleryUrls = await Promise.all(galleryUploadPromises);
 
-            // 4. Preparar Payload limpio
+            // Preparar payload
             setStatusMsg("Guardando producto en base de datos...");
             
             const productPayload = {
-                name: formData.name,
-                price: parseInt(formData.price),
-                stock: parseInt(formData.stock),
-                description: formData.description,
-                categories: formData.categories.split(',').map(c => c.trim()).filter(Boolean),
-                styles: formData.styles.split(',').map(s => s.trim()).filter(Boolean),
-                
-                layerIndex: 1, 
-                
+                name: cleanName,
+                price: cleanPrice,
+                stock: cleanStock,
+                description: cleanDesc,
+                categories: cleanCategories,
+                styles: cleanStyles,
+                layerIndex: 1, // Valor fijo
                 builderImage: assetUrl,   
                 galleryImages: galleryUrls 
             };
 
-            // 5. Llamar al servicio
+            // Enviar al backend
             await productService.createProduct(productPayload);
             
-            alert('¡Producto creado exitosamente!');
-            navigate('/'); 
+            // Éxito
+            setStatusMsg("¡Producto creado exitosamente!");
+            setTimeout(() => {
+                navigate('/'); 
+            }, 1500);
 
         } catch (err) {
             console.error(err);
             setError(err.message || "Error al crear producto");
+            setStatusMsg(""); 
         } finally {
             setLoading(false);
-            setStatusMsg("");
         }
     };
 

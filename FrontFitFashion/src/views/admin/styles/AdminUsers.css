@@ -263,3 +263,46 @@
     outline: none;
     border-color: var(--color-secondary);
 }
+
+/* --- BOTÓN "NUEVO PRODUCTO" (Versión Compacta y Plana) --- */
+
+.btn-add-premium {
+    background: linear-gradient(135deg, #ff6d00 0%, #e65100 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    
+    /* CAMBIO: Padding y fuente más pequeños */
+    padding: 0.6rem 1.2rem; 
+    font-size: 0.9rem;
+    
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    /* CAMBIO: Sin sombra inicial */
+    box-shadow: none;
+    
+    transition: filter 0.2s ease; /* Solo animamos el brillo */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-add-premium:hover {
+    /* CAMBIO: Sin movimiento ni sombra al pasar el mouse, solo brillo */
+    transform: none;
+    box-shadow: none;
+    filter: brightness(1.1); /* Se aclara un poco para dar feedback */
+}
+
+.btn-add-premium:active {
+    filter: brightness(0.95); /* Se oscurece un pelín al hacer click */
+}
+
+.plus-icon {
+    font-size: 1.1rem; /* Ajustado al nuevo tamaño */
+    line-height: 1;
+    font-weight: 400;
+}

@@ -91,7 +91,7 @@ const Navbar = () => {
                 </svg>
                 <input 
                     type="text" 
-                    placeholder="Buscar..." 
+                    placeholder="Buscar" 
                     value={searchTerm}
                     onChange={handleSearch}
                     className="search-input"
