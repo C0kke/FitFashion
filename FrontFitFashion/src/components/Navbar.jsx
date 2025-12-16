@@ -4,7 +4,7 @@ import "./styles/Navbar.css";
 import axios from 'axios';
 import { useCart } from '../store/CartContext'; 
 import { useNavigate } from 'react-router-dom';
-import { UserContext } from "../store/UserContext";
+import { useUser } from "../store/UserContext";
 
 const BackURL = import.meta.env.VITE_GATEWAY_URL;
 

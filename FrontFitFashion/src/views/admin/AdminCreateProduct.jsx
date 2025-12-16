@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { productService } from '../services/products.service';
+import { productService } from '../../services/products.service'; // Asegurando la ruta correcta ../../
 import './styles/AdminCreateProduct.css';
 
 const AdminCreateProduct = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [statusMsg, setStatusMsg] = useState(""); // Para mostrar "Subiendo foto 1..."
+    const [statusMsg, setStatusMsg] = useState(""); 
 
-    // Estado del formulario
+    // Estado del formulario (Quitamos layerIndex de aquí porque será fijo)
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -17,10 +17,9 @@ const AdminCreateProduct = () => {
         description: '',
         categories: '', 
         styles: '',     
-        layerIndex: 1,  
     });
 
-    // Estado para las imágenes (Archivos reales)
+    // Estado para las imágenes 
     const [assetImage, setAssetImage] = useState(null); 
     const [assetPreview, setAssetPreview] = useState(null);
 
@@ -36,7 +35,7 @@ const AdminCreateProduct = () => {
         setFormData({ ...formData, [name]: value });
     };
 
-    // Manejo de imagen del Maniquí (Builder)
+    // Manejo de imagen del Maniquí 
     const handleAssetImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -66,7 +65,6 @@ const AdminCreateProduct = () => {
         data.append("file", file);
         data.append("upload_preset", UPLOAD_PRESET);
         data.append("cloud_name", CLOUD_NAME);
-        // Opcional: data.append("folder", "fitfashion_products"); (Ya lo configuraste en el dashboard)
 
         const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
             method: "POST",
@@ -79,7 +77,7 @@ const AdminCreateProduct = () => {
         }
 
         const fileData = await res.json();
-        return fileData.secure_url; // Retorna el link HTTPS directo
+        return fileData.secure_url; 
     };
 
     const handleSubmit = async (e) => {
@@ -97,7 +95,7 @@ const AdminCreateProduct = () => {
             setStatusMsg("Subiendo imagen del maniquí...");
             const assetUrl = await uploadToCloudinary(assetImage);
 
-            // 3. Subir Galería (Paralelo)
+            // 3. Subir Galería 
             setStatusMsg(`Subiendo ${galleryImages.length} imágenes de galería...`);
             const galleryUploadPromises = galleryImages.map(file => uploadToCloudinary(file));
             const galleryUrls = await Promise.all(galleryUploadPromises);
@@ -110,15 +108,16 @@ const AdminCreateProduct = () => {
                 price: parseInt(formData.price),
                 stock: parseInt(formData.stock),
                 description: formData.description,
-                // Convertir strings separados por coma a Arrays limpios
                 categories: formData.categories.split(',').map(c => c.trim()).filter(Boolean),
                 styles: formData.styles.split(',').map(s => s.trim()).filter(Boolean),
-                layerIndex: parseInt(formData.layerIndex),
-                builderImage: assetUrl,    // URL String
-                galleryImages: galleryUrls // Array de URL Strings
+                
+                layerIndex: 1, 
+                
+                builderImage: assetUrl,   
+                galleryImages: galleryUrls 
             };
 
-            // 5. Llamar al servicio (que enviará JSON al Gateway -> Rabbit -> MS)
+            // 5. Llamar al servicio
             await productService.createProduct(productPayload);
             
             alert('¡Producto creado exitosamente!');
@@ -179,12 +178,7 @@ const AdminCreateProduct = () => {
                                 <label>Estilos (separados por coma)</label>
                                 <input type="text" name="styles" value={formData.styles} onChange={handleInputChange} placeholder="Ej: Casual, Urbano" />
                             </div>
-                        </div>
-                        <div className="form-group short">
-                            <label title="1: Piel/Base, 2: Ropa interior, 3: Poleras/Pantalones, 4: Chaquetas/Accesorios">
-                                Índice de Capa (Layer Index) ℹ️
-                            </label>
-                            <input type="number" name="layerIndex" value={formData.layerIndex} onChange={handleInputChange} min="1" max="10" />
+                            {/* ELIMINADO: Input de Layer Index */}
                         </div>
                     </div>
 
