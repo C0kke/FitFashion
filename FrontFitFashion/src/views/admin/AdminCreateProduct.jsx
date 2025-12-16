@@ -67,7 +67,7 @@ const AdminCreateProduct = () => {
         // Filtrar archivos válidos
         const validFiles = files.filter(file => {
             if (file.size > MAX_FILE_SIZE) {
-                aerrorMsg = `La imagen "${file.name}" pesa más de 5MB y fue ignorada.`;
+                errorMsg = `La imagen "${file.name}" pesa más de 5MB y fue ignorada.`;
                 return false;
             }
             return true;
