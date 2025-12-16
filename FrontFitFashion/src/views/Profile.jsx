@@ -273,18 +273,6 @@ const Profile = () => {
                         )}
                     </div>
                 </form>
-                
-                {user.role === 'ADMIN' && !isEditing && (
-                    <div className="admin-section">
-                        <div className="admin-header">
-                            <h3>Panel de Administrador</h3>
-                        </div>
-                        <p>Gestión de usuarios de la plataforma.</p>
-                        <button onClick={handleGoToUsers} className="btn-admin">
-                            Administrar Usuarios
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     )

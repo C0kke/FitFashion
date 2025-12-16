@@ -12,53 +12,44 @@ export const CartProvider = ({ children }) => {
     const closeCart = () => setIsCartOpen(false);
 
     const refreshCart = async () => {
-        setLoading(true);
         try {
             const data = await cartService.getCart();
-            console.log("Carrito cargado:", data);
             setCart(data); 
         } catch (error) {
             console.error("Error cargando carrito:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
     useEffect(() => {
-        refreshCart();
+        setLoading(true);
+        refreshCart().finally(() => setLoading(false));
     }, []);
 
     const addItem = async (product, quantity = 1) => {
         try {
             const productId = product.id || product; 
-
-            const response = await cartService.addToCart(productId, quantity);
-            
-            if (response.cart) {
-                setCart(response.cart);
-                openCart(); 
-            }
+            await cartService.addToCart(productId, quantity);
+            await refreshCart();
         } catch (error) {
             console.error("Error al agregar item:", error);
         }
     };
+
     const removeItem = async (itemId) => {
         try {
-            const response = await cartService.removeItem(itemId);
+            await cartService.removeItem(itemId);
+            await refreshCart();
             
-            if (response.cart) {
-                setCart(response.cart);
-            }
         } catch (error) {
             console.error("Error al eliminar item:", error);
         }
     };
 
     const items = useMemo(() => cart?.items || [], [cart]);
+    
     const totalItems = useMemo(() => {
         return items.reduce((acc, item) => acc + item.quantity, 0);
     }, [items]);
-
 
     const contextValue = useMemo(() => ({
         cart,     

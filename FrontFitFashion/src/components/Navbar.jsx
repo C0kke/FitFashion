@@ -59,7 +59,7 @@ const Navbar = () => {
     };
 
     const navigateToAdmin = () => {
-        navigate("/admin/users");
+        navigate("/admin/dashboard");
     };
 
     const handleLogout = async () => {
@@ -100,9 +100,13 @@ const Navbar = () => {
             
             <div className="rightSection">
 
-                {userData?.role === 'ADMIN' && (
+                {userData?.role === 'ADMIN' ? (
                     <button onClick={navigateToAdmin} style={{backgroundColor: '#444', color: 'white'}}>
                         Panel Admin
+                    </button>
+                ) : userData?.role === 'GESTOR' && (
+                    <button onClick={navigateToAdmin} style={{backgroundColor: '#444', color: 'white'}}>
+                        Panel Gerente
                     </button>
                 )}
 

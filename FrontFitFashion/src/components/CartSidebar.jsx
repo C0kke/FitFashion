@@ -3,12 +3,9 @@ import './styles/CartSidebar.css';
 import { useNavigate } from 'react-router-dom';
 
 function CartSidebar({ isOpen, onClose }) {
-    const { items, removeItem, cart } = useCart(); 
-    // Aseguramos que items sea un array
+    const { items, removeItem, cart } = useCart();
     const cartItems = items || [];
     
-    // Obtenemos el total directamente del carrito (viene del backend)
-    // Si no existe, usamos 0.
     const total = cart?.total_price || 0;
 
     const sidebarClass = `cart-sidebar ${isOpen ? 'open' : 'closed'}`;
@@ -31,16 +28,12 @@ function CartSidebar({ isOpen, onClose }) {
                 <ul className="cart-list">
                 {cartItems.map(item => (
                     <li key={item.id} className="cart-item">
-                    {/* CAMBIO CLAVE 1: Usamos item.name, no item.product.name */}
                     <span>{item.name || "Producto sin nombre"} ({item.quantity} uds)</span>
                     
                     <div className="item-actions">
-                        {/* CAMBIO CLAVE 2: Usamos item.subtotal directamente */}
                         <span className="item-price">
                             ${(item.subtotal || 0).toFixed(2)}
                         </span>
-                        
-                        {/* CAMBIO CLAVE 3: item.id ya es el ID correcto según nuestro servicio */}
                         <button onClick={() => removeItem(item.id)} className="remove-item">Eliminar</button>
                     </div>
                     </li>

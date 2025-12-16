@@ -67,14 +67,19 @@ export const cartService = {
     },
 
     removeItem: async (itemId) => {
-        const { data } = await client.mutate({
-            mutation: REMOVE_FROM_CART_MUTATION,
-            variables: { itemId }
-        });
-        return { 
-            status: data.removeFromCart.status,
-            cart: data.removeFromCart.cart 
-        };
+        try {
+            const { data } = await client.mutate({
+                mutation: REMOVE_FROM_CART_MUTATION,
+                variables: { productId: itemId } 
+            });
+            return { 
+                status: 200,
+                cart: data.removeFromCart
+            };
+        } catch (error) {
+            console.error("Error al eliminar item:", error);
+            throw error;
+        }
     },
 
     checkout: async (shippingAddressId) => {

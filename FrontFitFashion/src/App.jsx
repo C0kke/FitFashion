@@ -15,6 +15,8 @@ import OrderHistory from './views/OrderHistory.jsx'
 import ProductDetail from './views/ProductDetail.jsx'
 import OutfitBuilder from './views/OutfitBuilder.jsx'
 import AdminCreateProduct from './views/admin/AdminCreateProduct.jsx'
+import AdminDashboard from './views/admin/AdminDashboard.jsx'
+import AdminCreateUser from './views/admin/AdminCreateUser.jsx'
 
 function App() {
   const { user, loading } = useUser()
@@ -30,10 +32,11 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
-        {user?.role === 'ADMIN' && (
+        {(user?.role === 'ADMIN' || user?.role === 'GESTOR') && (
           <>
-            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/create-product" element={<AdminCreateProduct />} />
+            <Route path="/admin/create-user" element={<AdminCreateUser />} />
           </>
         )}
         <Route path="*" element={<h2>Página no encontrada</h2>} />

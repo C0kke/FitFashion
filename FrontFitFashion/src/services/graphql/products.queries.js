@@ -22,6 +22,7 @@ export const GET_PRODUCTS_QUERY = gql`
       id
       name
       price
+      stock
       galleryImages
       builderImage
       description
