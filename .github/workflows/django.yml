@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout del código
       uses: actions/checkout@v4
@@ -19,19 +20,18 @@ jobs:
         python-version: '3.11'
 
     - name: Instalar dependencias
+      working-directory: ./ms_auth  
       run: |
         python -m pip install --upgrade pip
-        pip install coverage  # Instalamos coverage también aquí
+        pip install coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Correr Tests y Coverage
+      working-directory: ./ms_auth
       env:
-        # Variables de entorno para que Django no falle al iniciar
         SECRET_KEY: 'django-insecure-test-key-para-ci'
         DEBUG: 'True'
-        # Si usas Postgres, aquí van las credenciales del servicio de arriba
-        # DB_ENGINE: 'django.db.backends.postgresql'
+        KAFKA_BROKER: 'localhost:9092'
       run: |
-        # Corremos los tests y mostramos el reporte en la consola de GitHub
         coverage run --source='users' manage.py test users
         coverage report
