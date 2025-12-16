@@ -11,6 +11,7 @@ export const GET_PRODUCT_DETAIL_QUERY = gql`
       builderImage
       galleryImages
       categories
+      styles
     }
   }
 `;
@@ -25,6 +26,7 @@ export const GET_PRODUCTS_QUERY = gql`
       builderImage
       description
       categories
+      styles
     }
   }
 `;

@@ -74,9 +74,6 @@ const OutfitBuilder = () => {
     };
 
     const filteredProducts = products.filter(p => selectedCategory === 'Todos' || (p.categories && p.categories.includes(selectedCategory)));
-    
-    // Calculamos total sumando todo lo que hay en el canvas
-    const outfitPrice = outfitItems.reduce((total, item) => total + (item.product.price || 0), 0);
 
     if (!cartItems || cartItems.length === 0) {
         return (
@@ -100,10 +97,6 @@ const OutfitBuilder = () => {
                         <li key={cat} className={selectedCategory === cat ? 'active' : ''} onClick={() => setSelectedCategory(cat)}>{cat}</li>
                     ))}
                 </ul>
-                <div className="price-total-section">
-                    <span>Outfit:</span>
-                    <span className="price-amount">${outfitPrice.toLocaleString('es-CL')}</span>
-                </div>
             </div>
 
             {/* CENTRO: ESCENARIO */}

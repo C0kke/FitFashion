@@ -239,3 +239,41 @@
         padding: 1.5rem;
     }
 }
+
+/* --- FICHA TÉCNICA CORREGIDA --- */
+
+.product-specs {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    /* CORRECCIÓN DE ALINEACIÓN */
+    width: 100%; 
+    text-align: left; /* Forza el texto a la izquierda aunque el padre centre */
+}
+
+.spec-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start; /* Asegura que empiece desde la izquierda */
+}
+
+.spec-label {
+    font-weight: 700;
+    color: var(--color-primary);
+    
+    /* CAMBIO CLAVE: Ancho fijo para que actúe como columna */
+    width: 90px; 
+    flex-shrink: 0; /* Evita que se aplaste */
+    
+    margin-right: 0; /* Quitamos margen porque usaremos el ancho fijo */
+    opacity: 0.9;
+}
+
+.spec-value {
+    font-weight: 400;
+    color: #666;
+    text-transform: capitalize;
+    flex: 1; /* Toma el resto del espacio */
+}

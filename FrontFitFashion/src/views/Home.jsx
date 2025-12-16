@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useCart } from '../store/CartContext';
 import { productService } from '../services/products.service';
@@ -12,6 +12,8 @@ const Home = () => {
     const [productos, setProductos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -29,6 +31,19 @@ const Home = () => {
         fetchProducts();
     }, []);
 
+    const searchTerm = searchParams.get("q")?.toLowerCase() || "";
+
+    const filteredProducts = productos.filter((producto) => {
+        if (!searchTerm) return true; 
+
+        const nameMatch = producto.name.toLowerCase().includes(searchTerm);
+        const priceMatch = producto.price?.toString().includes(searchTerm);
+        const categoryMatch = producto.categories?.some(cat => cat.toLowerCase().includes(searchTerm));
+        const styleMatch = producto.styles?.some(style => style.toLowerCase().includes(searchTerm));
+
+        return nameMatch || priceMatch || categoryMatch || styleMatch;
+    });
+
     const handleAddToCart = (producto) => {
         addItem(producto);
     }
@@ -44,12 +59,20 @@ const Home = () => {
     return (
         <div className="main-container">
             <div className="content">
-                <span>Nuevos productos</span>
+                <span> {searchTerm ? `Resultados de la búsqueda` : "Nuevos productos"} </span>
+
+                {filteredProducts.length === 0 && searchTerm && (
+                    <div style={{ textAlign: 'center', margin: '2rem', color: '#666' }}>
+                        <h3>No encontramos productos</h3>
+                        <p>Intenta con otra búsqueda</p>
+                    </div>
+                )}
+
                 <div className="productsSection">
-                    {productos.map((producto) => (
+                    {filteredProducts.map((producto) => (
                         <div key={producto.id} className="productCard" onClick={() => navigate(`/productdetail/${producto.id}`)} >
                             <h3 className="productName">{producto.name}</h3>
-                            <img src={producto.galleryImages[0]} alt={producto.name} className="productImage" />
+                            <img src={producto.galleryImages && producto.galleryImages.length > 0 ? producto.galleryImages[0] : producto.builderImage} alt={producto.name} className="productImage" />
                             <p className="productPrice"> $ {producto.price ? producto.price.toLocaleString('es-CL') : 'N/A'} </p>
                             <button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); handleAddToCart(producto); }}>
                                 Añadir al carrito

@@ -112,6 +112,26 @@ const ProductDetail = () => {
                     
                     <div className="divider"></div>
 
+                    <div className="product-specs">
+                        {producto.categories && producto.categories.length > 0 && (
+                            <div className="spec-row">
+                                <span className="spec-label">Categoría:</span>
+                                <span className="spec-value">
+                                    {producto.categories.join(", ")}
+                                </span>
+                            </div>
+                        )}
+
+                        {producto.styles && producto.styles.length > 0 && (
+                            <div className="spec-row">
+                                <span className="spec-label">Estilo:</span>
+                                <span className="spec-value">
+                                    {producto.styles.join(", ")}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
                     <p className="detail-description">{producto.description}</p>
 
                     <div className="purchase-actions">
