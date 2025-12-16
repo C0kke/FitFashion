@@ -175,3 +175,17 @@ func (s *OrderService) VerifyAndFinalizePayment(ctx context.Context, paymentID s
 func (s *OrderService) GetAllOrders(ctx context.Context) ([]models.Order, error) {
     return s.OrderRepo.FindAll(ctx)
 }
+
+func (s *OrderService) UpdateStatus(ctx context.Context, orderID uint, status string) error {
+    return s.OrderRepo.UpdateStatus(ctx, orderID, status)
+}
+
+func (s *OrderService) ApproveOrder(ctx context.Context, paymentID string) error {
+    if ctx == nil {
+        ctx = context.Background()
+    }
+
+    log.Printf("Procesando aprobación de orden para Payment ID: %s", paymentID)
+
+    return s.VerifyAndFinalizePayment(ctx, paymentID)
+}

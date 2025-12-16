@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/C0kke/FitFashion/ms_cart/internal/eventhandler"
 	"github.com/C0kke/FitFashion/ms_cart/pkg/database" 
 	"github.com/joho/godotenv"
 	"github.com/C0kke/FitFashion/ms_cart/internal/repository"
@@ -60,6 +61,12 @@ func main() {
 
 	cartService := service.NewCartService(cartRepo, productClientRPC)
 	orderService := service.NewOrderService(orderRepo, cartRepo, productClientRPC, orderPublisher, paymentClient)
+
+	paymentListener, err := eventhandler.NewPaymentListener(rabbitConn, orderService) // <--- NUEVO
+    if err != nil {
+        log.Fatalf("Error al crear Payment Listener: %v", err)
+    }
+	paymentListener.Start()
 
 	rpcQueueName := os.Getenv("RPC_QUEUE_NAME")
 	listener, err := rpc.NewRpcListener(rabbitConn, rpcQueueName, cartService, orderService)

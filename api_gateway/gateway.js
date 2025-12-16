@@ -8,7 +8,7 @@ require('dotenv').config();
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const { sendKafkaRequest } = require('./utils/kafkaRequest');
-
+const webhookRoutes = require('./routes/webhooks');
 const app = express();
 
 const responseEmitter = new EventEmitter();
@@ -47,7 +47,6 @@ async function startGateway() {
         
         const replyQueue = 'gateway_replies_v2';
         await rabbitChannel.assertQueue(replyQueue, { durable: true });
-
         console.log(`🐰 Gateway escuchando en RabbitMQ (${replyQueue})`);
 
         // Listener de RabbitMQ
@@ -66,6 +65,9 @@ async function startGateway() {
         console.error("Error iniciando RabbitMQ en Gateway:", error);
     }
 
+    app.use(express.json());
+    app.use(webhookRoutes(rabbitChannel));
+    
     // 3. Iniciar Apollo
     const server = new ApolloServer({ schema });
     await server.start();

@@ -104,6 +104,7 @@ func (l *Listener) handleMessage(d amqp.Delivery) {
         Response: respPayload,
         Status: status,
     })
+	log.Printf("[DEBUG] Respuesta de %s a Gateway: %s", req.Pattern, string(responseBody))
 
 	if d.ReplyTo != "" {
 		err = l.Channel.Publish(
@@ -150,8 +151,7 @@ func (l *Listener) processRequest(ctx context.Context, pattern string, data json
             ProductID string `json:"product_id"`
             QuantityChange int `json:"quantity"`
         }
-		log.Printf("[DEBUG] adjust_item_quantity - ProductID: %s, QuantityChange: %d", payload.ProductID, payload.QuantityChange)
-        if err := json.Unmarshal(data, &payload); err != nil {
+		if err := json.Unmarshal(data, &payload); err != nil {
             log.Printf("Deserialización de adjust_item_quantity fallida: %v", err)
 			return nil, fmt.Errorf("datos de entrada inválidos para adjust_item_quantity")
         }
