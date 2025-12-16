@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { authService } from "../../services/auth.service";
 import './styles/AdminUsers.css';
+import { useNavigate } from "react-router-dom";
 
 const ROLES = {
     ADMIN: 'ADMIN',
@@ -9,6 +10,7 @@ const ROLES = {
 };
 
 const AdminUsers = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -108,6 +110,7 @@ const AdminUsers = () => {
         <div className="admin-container">
             <div className="admin-header">
                 <h2>Administración de Usuarios</h2>
+                <button className="btn-save" style={{ marginLeft: '20px', backgroundColor: '#28a745' }} onClick={() => navigate('/admin/create-product')}>+ Nuevo Producto</button>
                 <span className="user-count">{users.length} Registrados</span>
             </div>
             

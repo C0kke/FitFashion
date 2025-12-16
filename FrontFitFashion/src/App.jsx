@@ -14,6 +14,7 @@ import Checkout from './views/Checkout.jsx'
 import OrderHistory from './views/OrderHistory.jsx'
 import ProductDetail from './views/ProductDetail.jsx'
 import OutfitBuilder from './views/OutfitBuilder.jsx'
+import AdminCreateProduct from './views/admin/AdminCreateProduct.jsx'
 
 function App() {
   const { user, loading } = useUser()
@@ -30,7 +31,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
         {user?.role === 'ADMIN' && (
-          <Route path="/admin/users" element={<AdminUsers />} />
+          <>
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/create-product" element={<AdminCreateProduct />} />
+          </>
         )}
         <Route path="*" element={<h2>Página no encontrada</h2>} />
         <Route path="/success" element={<OrderSuccess />} />

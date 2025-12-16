@@ -4,11 +4,13 @@ import "./styles/Navbar.css";
 import axios from 'axios';
 import { useCart } from '../store/CartContext'; 
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from "../store/UserContext";
 
 const BackURL = import.meta.env.VITE_GATEWAY_URL;
 
 const Navbar = () => {
     const { totalItems, openCart } = useCart(); 
+    const { user: userData } = useUser();
     
     const navigate = useNavigate();
 
@@ -28,6 +30,10 @@ const Navbar = () => {
 
     const navigateToHome = () => {
         navigate("/");
+    };
+
+    const navigateToAdmin = () => {
+        navigate("/admin/users");
     };
 
     const handleLogout = async () => {
@@ -53,6 +59,13 @@ const Navbar = () => {
             <h1 onClick={navigateToHome} style={{cursor: 'pointer'}}>FitFashion</h1>
             
             <div className="rightSection">
+
+                {userData?.role === 'ADMIN' && (
+                    <button onClick={navigateToAdmin} style={{backgroundColor: '#444', color: 'white'}}>
+                        Panel Admin
+                    </button>
+                )}
+
                 <button onClick={navigateToSimulate}>Simular outfit</button>
 
                 <button onClick={openCart} className="cart-button">
