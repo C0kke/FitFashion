@@ -5,6 +5,7 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -35,14 +36,5 @@ jobs:
     - name: Build
       run: npm run build --if-present
 
-
     - name: Run Tests with Coverage
-      run: npm run test:cov
-
-    - name: Upload Coverage Report
-      uses: actions/upload-artifact@v4
-      if: always() 
-      with:
-        name: coverage-report
-        path: ./ms_products/coverage/ 
-        retention-days: 30
+      run: npm run test:cov -- --coverageReporters=text
