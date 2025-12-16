@@ -57,11 +57,10 @@ const ProductDetail = () => {
     if (error) return <div className="detail-error">Error: {error.message}</div>;
     if (!producto) return <div className="detail-error">Producto no encontrado</div>;
 
-    // LOGICA CLAVE: Si hay galleryImages, úsalas. Si no, usa builderImage como respaldo.
-    // Esto evita que salga la ropa flotando si tienes fotos reales.
+    // Si hay galleryImages, úsalas. Si no, usa builderImage como respaldo.
     const displayImages = (producto.galleryImages && producto.galleryImages.length > 0)
         ? producto.galleryImages
-        : [producto.builderImage].filter(Boolean);
+        : [producto.builderImage || "https://placehold.co/300x400?text=No+Image"].filter(Boolean);
 
     const currentImageSrc = displayImages[currentIndex];
     const stockMsg = producto.stock > 0 ? `Disponible: ${producto.stock}` : 'Agotado';

@@ -72,7 +72,8 @@ const Home = () => {
                     {filteredProducts.map((producto) => (
                         <div key={producto.id} className="productCard" onClick={() => navigate(`/productdetail/${producto.id}`)} >
                             <h3 className="productName">{producto.name}</h3>
-                            <img src={producto.galleryImages && producto.galleryImages.length > 0 ? producto.galleryImages[0] : producto.builderImage} alt={producto.name} className="productImage" />
+                            <img src={producto.galleryImages && producto.galleryImages.length > 0 ? producto.galleryImages[0] : (producto.builderImage || "https://placehold.co/300x400?text=No+Image" )} 
+                                alt={producto.name} className="productImage"  onError={(e) => e.target.src = "https://placehold.co/300x400?text=No+Image"}/>
                             <p className="productPrice"> $ {producto.price ? producto.price.toLocaleString('es-CL') : 'N/A'} </p>
                             <button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); handleAddToCart(producto); }}>
                                 Añadir al carrito
