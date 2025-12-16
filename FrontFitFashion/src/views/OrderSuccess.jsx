@@ -4,7 +4,6 @@ import './styles/OrderSuccess.css';
 
 const OrderSuccess = () => {
     const navigate = useNavigate();
-    const order = mockOrder; 
     const handleGoHome = () => {
         navigate('/');
     };
