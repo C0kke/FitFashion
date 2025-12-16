@@ -96,48 +96,48 @@ export class ProductsService {
   }
 
   async validateStock(items: { productId: string; quantity: number }[]) {
-    console.log('   🔍 [Service] Iniciando validación. Cantidad de items:', items?.length);
+    console.log('[Service] Iniciando validación. Cantidad de items:', items?.length);
 
     if (!items || items.length === 0) {
-        console.log('   ⚠️ [Service] Lista vacía. Retornando false.');
+        console.log('[Service] Lista vacía. Retornando false.');
         return { valid: false, message: 'La lista de items está vacía' };
     }
 
     try {
       const productIds = items.map((item) => item.productId);
-      console.log('   📡 [Service] Buscando en DB IDs:', productIds);
+      console.log('[Service] Buscando en DB IDs:', productIds);
       
       // LOG CRÍTICO 1: Antes de la DB
       const products = await this.productRepo.findBy({
         id: In(productIds),
       });
       // LOG CRÍTICO 2: Después de la DB
-      console.log(`   📦 [Service] DB respondió. Productos encontrados: ${products.length}`);
+      console.log(`[Service] DB respondió. Productos encontrados: ${products.length}`);
 
       for (const item of items) {
         const product = products.find((p) => p.id === item.productId);
 
         if (!product) {
-          console.log(`   ❌ [Service] Producto no encontrado: ${item.productId}`);
+          console.log(`[Service] Producto no encontrado: ${item.productId}`);
           return { valid: false, message: `Producto ${item.productId} no encontrado` };
         }
 
-        console.log(`   ⚖️ [Service] Revisando ${product.name}. Stock: ${product.stock}, Pedido: ${item.quantity}`);
+        console.log(`[Service] Revisando ${product.name}. Stock: ${product.stock}, Pedido: ${item.quantity}`);
 
         if (product.stock < item.quantity) {
-          console.log('   ⛔ [Service] Stock insuficiente.');
-          return { 
+          console.log('[Service] Stock insuficiente.');
+          return {
             valid: false, 
             message: `Stock insuficiente para ${product.name}. Solicitado: ${item.quantity}, Disponible: ${product.stock}` 
           };
         }
       }
 
-      console.log('   ✅ [Service] Todo OK. Stock disponible.');
+      console.log('[Service] Todo OK. Stock disponible.');
       return { valid: true, message: 'Stock disponible' };
 
     } catch (error) {
-      console.error("   💥 [Service] ERROR FATAL en DB o Lógica:", error);
+      console.error("[Service] ERROR FATAL en DB o Lógica:", error);
       throw new Error("Error consultando base de datos de productos");
     }
   }

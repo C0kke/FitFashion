@@ -65,7 +65,7 @@ export class ProductsController {
   @MessagePattern('create_product')
   async handleCreateProduct(@Payload() data: CreateProductDto, @Ctx() context: RmqContext) {
     await this.replyManual(context, async () => {
-      console.log('✨ [RabbitMQ] Creando nuevo producto:', data.name);
+      console.log('[RabbitMQ] Creando nuevo producto:', data.name);
       return await this.productsService.create(data);
     });
   }
@@ -92,7 +92,7 @@ export class ProductsController {
   @MessagePattern('validate_stock')
   async handleValidateStock(@Payload() data: CartItemDto[], @Ctx() context: RmqContext) {
     await this.replyManual(context, async () => {
-      console.log('➡️ [Controller] Validando Stock:', JSON.stringify(data));
+      console.log('[Controller] Validando Stock:', JSON.stringify(data));
       // El servicio ya retorna { valid: boolean, message: string }
       // No hace falta envolverlo más, así es compatible con tu Gateway actual
       return await this.productsService.validateStock(data);
@@ -126,9 +126,7 @@ export class ProductsController {
     });
   }
 
-  // ============================================================
-  // 🔥 EL MOTOR MÁGICO (Mejorado con ACKs)
-  // ============================================================
+  // MÉTODO AUXILIAR PARA RESPONDER MENSAJES RABBITMQ (RPC MANUAL)
   private async replyManual(context: RmqContext, action: () => Promise<any>) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
@@ -140,7 +138,7 @@ export class ProductsController {
       
       // 2. Si hay quien espera respuesta (RPC pattern), respondemos
       if (replyTo && correlationId) {
-        console.log(`📤 [RabbitMQ] Respondiendo a ${replyTo}`);
+        console.log(`[RabbitMQ] Respondiendo a ${replyTo}`);
         channel.sendToQueue(
           replyTo, 
           Buffer.from(JSON.stringify(result)), 
@@ -148,11 +146,11 @@ export class ProductsController {
         );
       }
 
-      // 3. IMPORTANTE: Confirmar a RabbitMQ que procesamos el mensaje
+      // 3. Confirmar a RabbitMQ que procesamos el mensaje
       channel.ack(originalMsg);
 
     } catch (error) {
-      console.error("❌ [RabbitMQ] Error procesando:", error.message);
+      console.error("[RabbitMQ] Error procesando:", error.message);
       
       // Si falla, enviamos el error al cliente para que no se quede esperando timeout
       if (replyTo && correlationId) {
