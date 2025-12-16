@@ -32,6 +32,13 @@ const OutfitBuilder = () => {
 
     // --- 2. LOGICA DE AGREGAR (Push al final del array) ---
     const handleSelectProduct = (product) => {
+
+        const isAlreadyInOutfit = outfitItems.some(item => item.product.id === product.id);
+
+        if (isAlreadyInOutfit) {
+            console.warn(`El producto ${product.name} (ID: ${product.id}) ya está en el probador.`);
+            return; 
+        }
         const newItem = {
             uniqueId: Date.now(), // ID único para que React distinga capas (incluso si repites prenda)
             product: product,
