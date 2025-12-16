@@ -3,11 +3,15 @@ import './styles/CartSidebar.css';
 import { useNavigate } from 'react-router-dom';
 
 function CartSidebar({ isOpen, onClose }) {
-    const { items, removeItem } = useCart();
+    const { items, removeItem, cart } = useCart(); 
+    // Aseguramos que items sea un array
+    const cartItems = items || [];
+    
+    // Obtenemos el total directamente del carrito (viene del backend)
+    // Si no existe, usamos 0.
+    const total = cart?.total_price || 0;
 
-    const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const sidebarClass = `cart-sidebar ${isOpen ? 'open' : 'closed'}`;
-
     const navigate = useNavigate();
 
     return (
@@ -21,15 +25,22 @@ function CartSidebar({ isOpen, onClose }) {
             </div>
 
             <div className="sidebar-content">
-            {items.length === 0 ? (
+            {cartItems.length === 0 ? (
                 <p className="empty-message">Tu carrito está vacío.</p>
             ) : (
                 <ul className="cart-list">
-                {items.map(item => (
+                {cartItems.map(item => (
                     <li key={item.id} className="cart-item">
-                    <span>{item.name} ({item.quantity} uds)</span>
+                    {/* CAMBIO CLAVE 1: Usamos item.name, no item.product.name */}
+                    <span>{item.name || "Producto sin nombre"} ({item.quantity} uds)</span>
+                    
                     <div className="item-actions">
-                        <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                        {/* CAMBIO CLAVE 2: Usamos item.subtotal directamente */}
+                        <span className="item-price">
+                            ${(item.subtotal || 0).toFixed(2)}
+                        </span>
+                        
+                        {/* CAMBIO CLAVE 3: item.id ya es el ID correcto según nuestro servicio */}
                         <button onClick={() => removeItem(item.id)} className="remove-item">Eliminar</button>
                     </div>
                     </li>
@@ -41,9 +52,16 @@ function CartSidebar({ isOpen, onClose }) {
             <div className="sidebar-footer">
             <div className="cart-summary">
                 <strong>Total:</strong> 
-                <strong>${total.toFixed(2)}</strong>
+                <strong>${Number(total).toFixed(2)}</strong>
             </div>
-            <button onClick={() => navigate('/checkout')} className="checkout-button" disabled={items.length === 0}>
+            <button 
+                onClick={() => {
+                    onClose();
+                    navigate('/checkout');
+                }} 
+                className="checkout-button" 
+                disabled={cartItems.length === 0}
+            >
                 Proceder al Pago
             </button>
             </div>

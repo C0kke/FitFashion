@@ -2,7 +2,7 @@ const rabbitRequest = require('../../utils/rabbitRequest');
 
 const typeDefs = `#graphql
     type CartItem {
-        product_id: ID!
+        productId: ID!
         quantity: Int!
         nameSnapshot: String!
         unitPrice: Int!

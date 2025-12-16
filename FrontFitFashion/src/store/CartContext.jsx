@@ -1,49 +1,77 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { cartService } from '../services/cart.service';
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-    const [items, setItems] = useState([]);  
+    const [cart, setCart] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
-
     const openCart = () => setIsCartOpen(true);
     const closeCart = () => setIsCartOpen(false);
 
-    const addItem = (product) => {
-        setItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === product.id);
+    const refreshCart = async () => {
+        setLoading(true);
+        try {
+            const data = await cartService.getCart();
+            console.log("Carrito cargado:", data);
+            setCart(data); 
+        } catch (error) {
+            console.error("Error cargando carrito:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-            if (existingItem) {
-                return prevItems.map(item =>
-                item.id === product.id
-                    ? { ...item, quantity: item.quantity + 1 }
-                    : item
-                );
-            } else {
-                return [...prevItems, { ...product, quantity: 1 }];
+    useEffect(() => {
+        refreshCart();
+    }, []);
+
+    const addItem = async (product, quantity = 1) => {
+        try {
+            const productId = product.id || product; 
+
+            const response = await cartService.addToCart(productId, quantity);
+            
+            if (response.cart) {
+                setCart(response.cart);
+                openCart(); 
             }
-        });
+        } catch (error) {
+            console.error("Error al agregar item:", error);
+        }
+    };
+    const removeItem = async (itemId) => {
+        try {
+            const response = await cartService.removeItem(itemId);
+            
+            if (response.cart) {
+                setCart(response.cart);
+            }
+        } catch (error) {
+            console.error("Error al eliminar item:", error);
+        }
     };
 
-
-    const removeItem = (productId) => {
-        setItems(prevItems => prevItems.filter(item => item.id !== productId));
-    };
-    
-
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+    const items = useMemo(() => cart?.items || [], [cart]);
+    const totalItems = useMemo(() => {
+        return items.reduce((acc, item) => acc + item.quantity, 0);
+    }, [items]);
 
 
     const contextValue = useMemo(() => ({
-        items,
-        addItem,
-        removeItem,
+        cart,     
+        items,      
+        loading,       
         totalItems,
         isCartOpen,
         openCart,
         closeCart,
-    }), [items, isCartOpen]);
+        addItem,
+        removeItem,
+        refreshCart     
+    }), [cart, items, loading, totalItems, isCartOpen]);
 
     return (
         <CartContext.Provider value={contextValue}>
