@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cartService } from '../services/cart.service';
 import './styles/OrderHistory.css'; 
-
-const mockOrderHistory = [
-    {
-        id: 'FF-890123',
-        fecha: '2025-11-20',
-        total: 35000,
-        estado: 'PAGADO',
-        items: 3,
-        detalle: [
-            { nombre: 'Camisa Casual', cantidad: 1, precio: 35000 },
-        ],
-    }
-];
 
 const OrderHistory = () => {
     const navigate = useNavigate();
@@ -21,10 +9,32 @@ const OrderHistory = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setTimeout(() => {
-            setOrders(mockOrderHistory);
-            setLoading(false);
-        }, 800);
+        const fetchOrders = async () => {
+            try {
+                const response = await cartService.getUserOrders();
+                if (response.orders) {
+                    const mappedOrders = response.orders.map(order => ({
+                        id: order.id,
+                        total: order.total,
+                        estado: order.status,
+                        shipping_address: order.shipping_address || '—',
+                        items: order.order_items ? order.order_items.reduce((acc, item) => acc + item.quantity, 0) : 0,
+                        detalle: order.order_items ? order.order_items.map(item => ({
+                            nombre: item.nameSnapshot,
+                            cantidad: item.quantity,
+                            precio: item.unitPrice
+                        })) : []
+                    }));
+                    setOrders(mappedOrders);
+                }
+            } catch (error) {
+                console.error("Error al cargar el historial de órdenes:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrders();
     }, []);
 
     const handleViewDetails = (orderId) => {
@@ -64,10 +74,13 @@ const OrderHistory = () => {
                                         <strong>Orden ID:</strong> <span>{order.id}</span>
                                     </div>
                                     <div className="order-info">
-                                        <strong>Fecha:</strong> <span>{order.fecha}</span>
+                                        <strong>Dirección envío:</strong> <span>{order.shipping_address}</span>
                                     </div>
                                     <div className="order-info total-info">
                                         <strong>Total:</strong> <span>${order.total}</span>
+                                    </div>
+                                    <div className="order-info">
+                                        <strong>Artículos:</strong> <span>{order.items}</span>
                                     </div>
                                     <div className={`order-info status-info status-${order.estado.toLowerCase().replace(/\s/g, '-')}`}>
                                         <strong>Estado:</strong> <span>{order.estado}</span>

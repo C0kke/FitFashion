@@ -114,7 +114,7 @@ export const cartService = {
             
             return {
                 status: 200,
-                orders: data.myOrders
+                orders: data.getUserOrders
             };
         } catch (error) {
             console.error("Error obteniendo mis órdenes", error);

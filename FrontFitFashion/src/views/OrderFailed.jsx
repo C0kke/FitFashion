@@ -3,12 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import './styles/OrderFailed.css';
 
 const mockOrderDetails = {
-    total: 180,
-    productos: [
-        { id: 1, nombre: 'Camisa Casual', cantidad: 1, precio: 35.00 },
-        { id: 2, nombre: 'Pantalones Jeans', cantidad: 1, precio: 65.50 },
-        { id: 3, nombre: 'Zapatillas', cantidad: 1, precio: 79.99 },
-    ],
     razonFallo: 'Fondos insuficientes o tarjeta rechazada.', 
 };
 
@@ -36,14 +30,6 @@ const OrderFailed = () => {
                 <div className="failure-reason">
                     <h3>Motivo:</h3>
                     <p>{order.razonFallo}</p>
-                </div>
-
-                <div className="cart-summary-section">
-                    <h4>Total Pendiente</h4>
-                    <div className="pending-total">
-                        <span>Productos:</span>
-                        <span className="total-amount">${order.total.toFixed(2)}</span>
-                    </div>
                 </div>
 
                 <div className="failed-actions">

@@ -56,9 +56,9 @@ export const GET_USER_ORDERS = gql`
         total
         status
         shipping_address
-        created_at # Si agregaste fecha en el schema, si no, bórralo
         order_items {
-            productID    # OJO: Verifica si en tu schema 'OrderItem' es 'productID' o 'product_id'
+            orderID
+            productID
             quantity
             unitPrice
             nameSnapshot
